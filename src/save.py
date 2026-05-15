@@ -1,4 +1,5 @@
 from Crawler.Downloader import Downloader
+from App.Config import config
 import argparse
 import asyncio
 
@@ -6,7 +7,7 @@ async def _main():
     parser = argparse.ArgumentParser(
         prog = 'Webpage Saver',
     )
-    parser.add_argument('-u', '--url')
+    parser.add_argument('--url')
     parser.add_argument('--html')
 
     args = parser.parse_args()
@@ -19,4 +20,4 @@ async def _main():
     else:
         raise 
 
-asyncio.run(_main)
+asyncio.run(_main())
