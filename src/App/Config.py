@@ -58,9 +58,9 @@ class Config:
 
     def set(self, option: str, value: str):
         if value == None:
-            del self.values.values[option]
+            del self.values[option]
         else:
-            self.values.values[option] = value
+            self.values[option] = value
 
         self.updateFile()
 
