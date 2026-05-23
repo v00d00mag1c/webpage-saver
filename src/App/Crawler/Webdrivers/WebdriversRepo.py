@@ -3,25 +3,30 @@ from typing import Generator
 from App.Crawler.Webdrivers.Webdriver import Webdriver
 
 class WebdriversRepo:
+    _list: list
+
+    def __init__(self):
+        self._list = self.getAll()
+
     def _getWebdriversList(self):
-        return config.get('webdrivers')
+        return self._list
 
     def _getCurrentWebdriverIndex(self):
-        return config.get('webdrivers.current')
+        return config.get('webdrivers.current', 0)
 
     def _setCurrentWebdriverIndex(self, id: int):
         config.set('webdrivers.current', id)
 
     def getAll(self) -> Generator[Webdriver]:
-        _list = self._getWebdriversList()
+        _list = config.get('webdrivers')
         if _list == None or type(_list) != list:
             return []
 
         for i in _list:
             yield Webdriver.model_validate(i)
 
-    def getDefault(self):
-        return self.getAll()[self._getCurrentWebdriverIndex()]
+    def getDefault(self) -> Webdriver:
+        return list(self.getAll())[self._getCurrentWebdriverIndex()]
 
     def add(self, webdriver: Webdriver):
         similar = None

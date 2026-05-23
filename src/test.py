@@ -1,6 +1,5 @@
-from App.Crawler.Downloader import Downloader
 from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
-from App.Crawler.Webdrivers.Chromedriver import Chromedriver
+from App.Crawler.Webdrivers.Webdriver import Webdriver
 from App import app
 import argparse
 import asyncio
@@ -19,11 +18,14 @@ async def _main():
         await downloader.start_webdriver()
     else:
         raise '''
-    
+
     repo = WebdriversRepo()
-    #repo.add(Chromedriver(
+    #repo.add(Webdriver(
     #    executable_path = ''
     #))
-    print(list(repo.getAll()))
+    webdriver = repo.getDefault()
+    await webdriver.start()
+
+    print(webdriver)
 
 asyncio.run(_main())

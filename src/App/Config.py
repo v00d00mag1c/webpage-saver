@@ -11,6 +11,9 @@ class Config:
         self.drivers = self.data.joinpath('drivers')
         self.drivers.mkdir(exist_ok=True)
 
+        self.webpages_dir = self.data.joinpath('webpages')
+        self.webpages_dir.mkdir(exist_ok=True)
+
         self.file = self.data.joinpath('conf.json')
         self.cache = self.data.joinpath('cache.json')
         if self.file.exists() == False:

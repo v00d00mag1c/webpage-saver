@@ -1,43 +1,48 @@
 from pydantic import Field, BaseModel
-from typing import Any
+from App import config
 from playwright.async_api import Playwright, async_playwright
+from App.Crawler.UserAgent import UserAgent
+from App.Crawler.WebPage import WebPage
+from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
 import platform
+import logging
 
 class Webdriver(BaseModel):
+    was_started: bool = Field(default = False)
     path: str = Field(default = None)
     platform: str = Field(default = 'win')
     executable_path: str = Field(default = None)
     webdriver_path: str = Field(default = None)
     user_data: str = Field(default = None)
+    user_agent: str = Field(default = None)
 
-    _playwright: Any = None
-    _browser: Any = None
-    _crawler: Any = None
-    _context: Any = None
+    async def start(self):
+        if self.was_started == True:
+            return None
 
-    async def start(self, i):
         size = None
-        if i.get('webdriver.sizes') != None:
-            size = i.get('webdriver.sizes').split(',')
+        #if i.get('webdriver.sizes') != None:
+        #    size = i.get('webdriver.sizes').split(',')
 
         self._playwright = await async_playwright().start()
 
-        self.log('launching browser')
-
-        self._browser = await self._launch_browser(i)
-
-        self._context = await self._browser.new_context(
-            viewport = None,
-            user_agent = self.get_useragent(),
-        )
+        logging.log(logging.INFO, 'launching browser')
 
         try:
             if size != None:
                 self.viewport = {"width": int(size[0]), "height": int(size[1])}
         except Exception as e:
-            self.log_error(e)
+            logging.log(logging.ERROR, e)
 
-    async def _launch_browser(self, i):
+        self._browser = await self._launch_browser()
+        self._context = await self._browser.new_context(
+            #viewport = self.viewport,
+            user_agent = self.get_useragent(),
+        )
+
+    async def _launch_browser(self):
+        #i.get('webdriver.headless')
+        is_headless = False
         args = [
             '--start-maximized',
             '--start-fullscreen',
@@ -46,11 +51,11 @@ class Webdriver(BaseModel):
             '--user-agent={0}'.format(self.get_useragent())
         ]
 
-        if self.user_data_dir != None:
-            args.append('--user_data=' + self.user_data_dir)
+        if self.user_data != None:
+            args.append('--user_data=' + self.user_data)
 
-        for argument in i.get('webdriver.args'):
-            args.append(argument)
+        #for argument in i.get('webdriver.args'):
+        #    args.append(argument)
 
         executable_path = self.executable_path
         if executable_path == None:
@@ -59,26 +64,39 @@ class Webdriver(BaseModel):
         return await self._playwright.chromium.launch(
             executable_path = executable_path,
             args = args,
-            headless = i.get('webdriver.headless')
+            headless = is_headless
         )
 
-    async def new_page(self, crawler):
-        page = WebdriverPage()
-        page._page = await self._context.new_page()
-        await page.setViewport(self.viewport)
+    def get_useragent(self) -> str:
+        _passed = config.get('web.crawler.user_agent')
+        if _passed == None:
+            return UserAgent.generate().string
+
+        return _passed.string
+
+    async def stop(self):
+        for i in ['_context', '_browser', '_playwright']:
+            if hasattr(self, i):
+                if i == '_playwright':
+                    getattr(self, i).close()
+                setattr(self, i, None)
+
+        self._playwright = None
+
+    async def openPage(self, page: WebPage):
+        new_page = WebdriverPage()
+        new_page._page = await self._context.new_page()
+
+        print('opened page {0}'.format(page.url))
+        #await page.setViewport(self.viewport)
 
         return page
 
-    async def clear(self):
-        await self._context.close()
-        await self._browser.close()
-        await self._playwright.stop()
-
     def get_shell(self):
-        return self._get('file').get_root().joinpath('chrome').joinpath('chrome-headless-shell.exe')
+        return self.executable_path.joinpath('chrome').joinpath('chrome-headless-shell.exe')
 
     def get_webdriver(self):
-        return self._get('file').get_root().joinpath('driver').joinpath('chromedriver.exe')
+        return self.webdriver_path.joinpath('chromedriver.exe')
 
     @staticmethod
     def _get_platform():
