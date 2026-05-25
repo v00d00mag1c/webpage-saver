@@ -1,39 +1,22 @@
 from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
-from App.Crawler.WebPage import WebPage
+from App.API import API
 from aiohttp import web
 from App import config
 import asyncio
+import logging
 
-webdrivers_repo = WebdriversRepo()
+api = API()
 
-async def get_webdrivers(request):
-    data = list()
-    for wd in webdrivers_repo.getAll():
-        data.append(wd.model_dump(exclude_none = True))
-
-    return web.json_response(
-        data = data,
-        content_type = 'application/json'
-    )
+async def get_webdrivers(request: web.Request):
+    return web.json_response(api.getWebdrivers())
 
 async def save_page(request: web.Request):
     inputs = await request.post()
     url = inputs.get('url')
-    data = {}
 
-    # TODO: w selection
-    webdriver = webdrivers_repo.getDefault()
-    await webdriver.start()
+    payload = await api.savePage(url = url)
 
-    page = WebPage(
-        url = url
-    )
-    page.create_dir(config.webpages_dir)
-    await webdriver.openPage(page)
-
-    return web.json_response(
-        data = page.model_dump(exclude_none = True),
-    )
+    return web.json_response(payload)
 
 async def main():
     host = '127.0.0.1'
@@ -54,7 +37,7 @@ async def main():
 
     await site.start()
 
-    print('server opened on {0}:{1}'.format(host, port))
+    logging.info('server opened on {0}:{1}'.format(host, port))
 
     while True:
         await asyncio.sleep(3600)

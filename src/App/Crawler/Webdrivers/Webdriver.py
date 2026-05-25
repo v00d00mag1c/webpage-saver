@@ -1,7 +1,7 @@
 from pydantic import Field, BaseModel
 from App import config
 from playwright.async_api import Playwright, async_playwright
-from App.Crawler.UserAgent import UserAgent
+from App.Crawler.Components.UserAgent import UserAgent
 from App.Crawler.WebPage import WebPage
 from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
 import platform
@@ -37,7 +37,7 @@ class Webdriver(BaseModel):
         self._browser = await self._launch_browser()
         self._context = await self._browser.new_context(
             #viewport = self.viewport,
-            user_agent = self.get_useragent(),
+            user_agent = self.getUserAgentString(),
         )
 
     async def _launch_browser(self):
@@ -48,7 +48,7 @@ class Webdriver(BaseModel):
             '--start-fullscreen',
             '--headless',
             '--no-sandbox',
-            '--user-agent={0}'.format(self.get_useragent())
+            '--user-agent={0}'.format(self.getUserAgentString())
         ]
 
         if self.user_data != None:
@@ -67,7 +67,10 @@ class Webdriver(BaseModel):
             headless = is_headless
         )
 
-    def get_useragent(self) -> str:
+    def getUserAgentString(self) -> str:
+        '''
+        Returns UserAgent string.
+        '''
         _passed = config.get('web.crawler.user_agent')
         if _passed == None:
             return UserAgent.generate().string
@@ -75,6 +78,9 @@ class Webdriver(BaseModel):
         return _passed.string
 
     async def stop(self):
+        '''
+        Stops browser emulator.
+        '''
         for i in ['_context', '_browser', '_playwright']:
             if hasattr(self, i):
                 if i == '_playwright':
@@ -87,15 +93,15 @@ class Webdriver(BaseModel):
         new_page = WebdriverPage()
         new_page._page = await self._context.new_page()
 
-        print('opened page {0}'.format(page.url))
+        logging.info('opened page {0}'.format(page.url))
         #await page.setViewport(self.viewport)
 
-        return page
+        return new_page
 
-    def get_shell(self):
+    def getShell(self):
         return self.executable_path.joinpath('chrome').joinpath('chrome-headless-shell.exe')
 
-    def get_webdriver(self):
+    def getWebdriver(self):
         return self.webdriver_path.joinpath('chromedriver.exe')
 
     @staticmethod

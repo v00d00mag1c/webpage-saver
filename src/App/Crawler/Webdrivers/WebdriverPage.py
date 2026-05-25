@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from App.Crawler.WebPage import WebPage
 import asyncio
 from urllib.parse import urlparse
 
@@ -6,11 +7,17 @@ class WebdriverPage:
     url_override: str = None
 
     _page = None
+    _page_response = None
 
     async def goto(self, url: str, wait_until: str = 'domcontentloaded'):
         _res = await self._page.goto(url, wait_until = wait_until)
 
-        return _res
+        self._page_response = _res
+
+    async def integrate(self, page: WebPage):
+        page.title = await self.get_title()
+        page.base_url = self.get_base_url()
+        page.relative_url = await self.get_relative_url()
 
     async def close(self):
         await self._page.close()
