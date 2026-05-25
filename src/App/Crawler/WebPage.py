@@ -1,9 +1,16 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from pathlib import Path
+from App.Crawler.Assets.Asset import Asset
+from App.Crawler.Assets.Meta import Meta
+from App.Crawler.Assets.Script import Script
+from App.Crawler.Assets.Link import Link
+from App.Crawler.Assets.URL import URL
+from App.Crawler.Assets.Media import Media
 import logging
 
 class WebPage(BaseModel):
+
     # Page data
 
     title: str = Field(default = None)
@@ -15,11 +22,21 @@ class WebPage(BaseModel):
     base_url: str = Field(default = None)
     relative_url: str = Field(default = None)
 
+    # Additional
+
+    meta: list[Meta] = Field(default = [])
+    script: list[Script] = Field(default = [])
+    links: list[Link] = Field(default = [])
+    hyperlinks: list[URL] = Field(default = [])
+    media: list[Media] = Field(default = [])
+
     # Mental disorders
+
     identify: str = Field(default = None)
     root_directory: str = Field(default = None, exclude = True)
     root_file: str = Field(default = 'index.html')
     assets_directory: str = Field(default = 'assets')
+    thumbs_directory: str = Field(default = 'thumbs')
     encoding: str = Field(default = 'utf-8')
     assets_links: dict = Field(default = {})
 
@@ -63,18 +80,21 @@ class WebPage(BaseModel):
         '''
         return self.getDir().joinpath(self.assets_directory)
 
+    def getThumbsDir(self) -> Path:
+        return self.getDir().joinpath(self.thumbs_directory)
+
     def _create(self, root_dir: Path):
         '''
         Creates dir in storage, index.html and assets.
         '''
         self.root_directory = root_dir
 
-        new_dir = self.getDir()
-        new_dir.mkdir(exist_ok=True)
+        self.getDir().mkdir(exist_ok=True)
+        self.getThumbsDir().mkdir(exist_ok=True)
+        self.getAssetsDir().mkdir(exist_ok=True)
 
         index_file = open(str(self.getRootFile()), 'w', encoding = self.encoding)
         index_file.close()
-        self.getAssetsDir().mkdir(exist_ok=True)
 
     def write(self, html: str):
         '''
@@ -88,7 +108,7 @@ class WebPage(BaseModel):
             with open(self.getRootFile(), 'w', encoding = self.encoding) as file:
                 file.write(html)
         except Exception as e:
-            logging.log("Error when writing file, encoding is {0}, trying UTF-8. ".format(self.encoding))
+            logging.error("Error when writing file, encoding is {0}, trying UTF-8. ".format(self.encoding))
             logging.exception(e)
 
             with open(self.getRootFile(), 'w', encoding = 'utf-8') as file:
@@ -115,3 +135,22 @@ class WebPage(BaseModel):
                 return self.assets_links.get(__link)
 
         return asset
+
+    def getRelativeURL(self, url: str):
+        if not url.startswith('http'):
+            if url.startswith('data:') == True:
+                return url
+
+        if url.startswith(self.relative_url) or url.startswith('http'):
+            return url
+
+        if self.relative_url[-1] == '/':
+            self.relative_url[-1] = ''
+
+        if len(url) > 0:
+            if url[0] == '/':
+                return self.relative_url + url
+            else:
+                return self.relative_url + '/' + url
+        else:
+            return self.relative_url # ???

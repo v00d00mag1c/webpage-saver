@@ -1,5 +1,6 @@
 from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
 from App.Crawler.WebPage import WebPage
+from App.Crawler.Crawler import Crawler
 from App import config
 
 class API:
@@ -21,6 +22,8 @@ class API:
                        url: str, 
                        webdriver_id: int = None):
         # TODO: w selection
+        crawler = Crawler()
+
         payload = list()
         webdriver = self.w_repo.getDefault()
         await webdriver.start()
@@ -30,8 +33,12 @@ class API:
         )
         page.init(config.webpages_dir)
         browser_page = await webdriver.openPage(page)
+
+        await crawler.register(page, browser_page)
         await browser_page.goto(page.url)
         await browser_page.integrate(page)
+        await crawler.crawl(page, browser_page)
+
         payload.append(page.model_dump(exclude_none = True))
 
         return payload

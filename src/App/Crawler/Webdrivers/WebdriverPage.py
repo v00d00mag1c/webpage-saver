@@ -54,6 +54,28 @@ class WebdriverPage:
 
         return _base_url
 
+    async def get_encoding(self):
+        #page = self._page.get()
+        #charset = await page.locator('meta[charset]').get_attribute('charset')
+        #if charset:
+        #    return charset
+
+        #content_type = await page.locator('meta[http-equiv=\"Content-Type\"]').get_attribute('content')
+        #if content_type and 'charset=' in content_type:
+        #    return content_type.split('charset=')[1].lower()
+
+        return 'utf-8'
+        try:
+            content_type = self._page_response.headers.get('content-type', '')
+            if 'charset=' in content_type.lower():
+                return content_type.lower().split('charset=')[1].split(';')[0].strip()
+            elif 'utf-8' in content_type.lower():
+                return 'utf-8'
+        except Exception as e:
+            self.log_error(e)
+
+        return 'utf-8'
+
     def override_url(self, url: str):
         self.url_override = url
 

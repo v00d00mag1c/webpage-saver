@@ -1,19 +1,20 @@
 from App.Crawler.Components.GotRequest import GotRequest
 from App.Crawler.WebPage import WebPage
+from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
+from App.Crawler.Components.PageHTML import PageHTML
+from App.Crawler.Screenshot import Screenshot
 import asyncio
 
 class Crawler:
-    i = None
-
-    async def register(self, page):
-        _roles = ['crawler.asset.download']
+    async def register(self, page: WebPage, webdriver_page):
+        #_roles = ['crawler.asset.download']
         #self.i = Increment()
 
-        self.log('registing page')
-        _orig_dir = page.html.get_assets_dir()
+        #self.log('registing page')
+        _orig_dir = page.getAssetsDir()
 
         async def _request(request):
-            page._page.got_assets.append(GotRequest(
+            webdriver_page.got_assets.append(GotRequest(
                 url = request.url,
                 request = request,
                 done = False
@@ -21,7 +22,7 @@ class Crawler:
 
         async def _response(response):
             request = None
-            for item in page._page.got_assets:
+            for item in webdriver_page.got_assets:
                 if item.url_matches(response.url):
                     request = item
 
@@ -56,25 +57,30 @@ class Crawler:
 
             request.done = True
 
-        page._page._page.on('request', _request)
-        page._page._page.on('response', _response)
+        #webdriver_page._page.on('request', _request)
+        #webdriver_page._page.on('response', _response)
 
-    async def crawl(self, page: WebPage, i: dict):
-        download_assets = i.get('crawler.download_other_assets')
+    async def crawl(self, page: WebPage, webdriver_page: WebdriverPage):
+        await webdriver_page.integrate(page)
 
-        await asyncio.sleep(i.get('crawler.sleep.before_crawl'))
+        #download_assets = i.get('crawler.download_other_assets')
 
-        await page.set_info()
-        page.html.set_encoding(await page.get_encoding())
+        #await asyncio.sleep(i.get('crawler.sleep.before_crawl'))
 
-        if i.get('scroll_down'):
-            await page._page.scroll_down(i.get('web.crawler.scroll_down.cycles'), i.get('web.crawler.scroll_down.'))
+        page.setEncoding(await webdriver_page.get_encoding())
 
-        await asyncio.sleep(i.get('crawler.sleep.before_html'))
-        await page._page._page.wait_for_timeout(i.get('crawler.network_timeout'))
+        #if i.get('scroll_down'):
+        #    await page._page.scroll_down(i.get('web.crawler.scroll_down.cycles'), i.get('web.crawler.scroll_down.'))
 
-        if i.get('crawler.screenshot.save'):
-            self.log('making screenshot...')
+        #await asyncio.sleep(i.get('crawler.sleep.before_html'))
+        #await page._page._page.wait_for_timeout(i.get('crawler.network_timeout'))
+
+        if True:
+            await Screenshot().make_viewport(page, webdriver_page)
+            await Screenshot().make_fullscreen(page, webdriver_page)
+
+        #if i.get('crawler.screenshot.save'):
+            #self.log('making screenshot...')
 
             #thumbs = await MakeScreenshot().execute({
             #    'page': page
@@ -83,31 +89,31 @@ class Crawler:
             #for thumb in thumbs.getItems():
             #    page.add_thumbnail(thumb)
 
-        html = PageHTML.from_html(await page._page.get_html())
-        if page.html.encoding == None:
-            page.html.set_encoding(html.encoding)
+        html = PageHTML.from_html(await webdriver_page.get_html())
+        if page.encoding == None:
+            page.setEncoding(html.encoding)
 
         for meta in html.get_meta(page):
-            page.meta_tags.append(meta)
+            page.meta.append(meta)
 
         for link in html.get_links(page):
-            page.header_links.append(link)
+            page.links.append(link)
 
         for link in html.get_urls(page):
-            page.page_links.append(link)
+            page.hyperlinks.append(link)
 
         for link in html.get_media(page):
             page.media.append(link)
 
         results = dict()
-        for key in ['get_favicons', 'get_media', 'get_downloadable_links', 'get_scripts']:
-            if results.get(key) == None:
-                results[key] = list()
+        #for key in ['get_favicons', 'get_media', 'get_downloadable_links', 'get_scripts']:
+        #    if results.get(key) == None:
+        #        results[key] = list()
 
-            self.log('getting {0}...'.format(key[4:]))
+        #    self.log('getting {0}...'.format(key[4:]))
 
-            for item in getattr(html, key)(page):
-                found_asset = None
+        #    for item in getattr(html, key)(page):
+        #        found_asset = None
 
                 #match (key):
                 #    case 'get_scripts':
@@ -115,24 +121,24 @@ class Crawler:
                 #            item.decompose()
                 #            continue
 
-                for asset in page._page.got_assets:
-                    if item.url and asset.url_matches(item.url):
-                        found_asset = asset
+        #        for asset in page._page.got_assets:
+        #            if item.url and asset.url_matches(item.url):
+        #                found_asset = asset
 
-                if found_asset == None and item.has_url():
-                    if download_assets == False:
-                        continue
+        #        if found_asset == None and item.has_url():
+        #            if download_assets == False:
+        #                continue
 
-                    try:
-                        await item.download_function(page.html.get_assets_dir(), self.i.getIndex())
-                    except Exception as e:
-                        self.log_error(e, exception_prefix='assets downloading error: ', role = ['crawler.asset.download'])
+        #            try:
+        #                await item.download_function(page.html.get_assets_dir(), self.i.getIndex())
+        #            except Exception as e:
+        #                self.log_error(e, exception_prefix='assets downloading error: ', role = ['crawler.asset.download'])
 
-                item.replace()
-                results[key].append(item)
+        #        item.replace()
+        #        results[key].append(item)
 
-        for item in results.get('get_favicons'):
-            page.favicons.append(item)
+        #for item in results.get('get_favicons'):
+        #    page.favicons.append(item)
 
         #if remove_scripts:
         #    try:
@@ -140,7 +146,6 @@ class Crawler:
         #    except Exception as e:
         #        self.log_error(e)
 
-        page.html.write(html.prettify())
+        page.write(html.prettify())
 
-        await self._after_crawl(page, i)
-
+        #await self._after_crawl(page, i)

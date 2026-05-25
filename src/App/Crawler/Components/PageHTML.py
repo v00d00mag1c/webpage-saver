@@ -1,9 +1,16 @@
 
 from App.Crawler.WebPage import WebPage
+from App.Crawler.Assets.Meta import Meta
+from App.Crawler.Assets.Favicon import Favicon
+from App.Crawler.Assets.Media import Media
+from App.Crawler.Assets.Link import Link
+from App.Crawler.Assets.URL import URL
+from App.Crawler.Assets.Script import Script
 from bs4.dammit import EncodingDetector
 from bs4 import BeautifulSoup
 from typing import Generator
 import re
+import logging
 
 class PageHTML:
     bs = None
@@ -12,7 +19,7 @@ class PageHTML:
     def get_favicons(self, orig_page: WebPage, take_default: bool = True) -> Generator:
         for icon in self.bs.select("link[rel*='icon']"):
             favicon = Favicon(sizes = getattr(icon, 'sizes', None))
-            favicon.set_url(orig_page.get_relative_url(icon.get('href')))
+            favicon.set_url(orig_page.getRelativeURL(icon.get('href')))
             favicon.set_node(icon)
 
             yield favicon
@@ -24,7 +31,7 @@ class PageHTML:
         for tag in self.bs.select("img[src], video[src], audio[src]"):
             item = Media()
             item.tagName = tag.name
-            item.set_url(orig_page.get_relative_url(tag.get('src')))
+            item.set_url(orig_page.getRelativeURL(tag.get('src')))
             item.set_node(tag)
             if tag.get('alt'):
                 item.alt = tag.get('alt')
@@ -52,11 +59,11 @@ class PageHTML:
             for key, attr in tag.attrs.items():
                 try:
                     if key == 'href':
-                        item.set_url(orig_page.get_relative_url(attr))
+                        item.set_url(orig_page.getRelativeURL(attr))
                     else:
                         setattr(item, key, attr)
                 except Exception as e:
-                    self.log_error(e)
+                    logging.exception(e)
 
             yield item
 
@@ -94,11 +101,11 @@ class PageHTML:
                             self.log('url {0}: probaly protocol'.format(attr))
                             url.set_protocol(attr)
                         else:
-                            url.set_url(orig_page.get_relative_url(attr))
+                            url.set_url(orig_page.getRelativeURL(attr))
                     elif key == 'download':
                         url.is_download = True
                 except Exception as e:
-                    self.log_error(e)
+                    logging.exception(e)
                     continue
 
             yield url
@@ -109,7 +116,7 @@ class PageHTML:
             item.set_node(tag)
 
             if tag.get('src') != None:
-                item.set_url(orig_page.get_relative_url(tag.get('src')))
+                item.set_url(orig_page.getRelativeURL(tag.get('src')))
             else:
                 pass
                 #for key, attr in tag.attrs.items():
@@ -198,7 +205,7 @@ class PageHTML:
             _url = item['data-__to_orig']
             _id = page.html.get_asset_by_url(_url)
             if _id == None:
-                self.log_error('page {0}: element \"{1}\" is missing'.format(page.getDbIds(), _url))
+                logging.error('page {0}: element \"{1}\" is missing'.format(page.getDbIds(), _url))
 
                 continue
 

@@ -3,10 +3,9 @@ from typing import Any
 from App import app
 import urllib
 
-class AssetMixin(BaseModel):
+class Asset(BaseModel):
     url: str = Field(default = None)
-    bs_node: Any = Field(default = None)
-    _unserializable = ['bs_node']
+    bs_node: Any = Field(default = None, exclude = True)
 
     # we know that contents are downloaded so it will available in the displayment
     def replace(self):
@@ -46,21 +45,21 @@ class AssetMixin(BaseModel):
             name = self.get_encoded_url()
 
         if self.url == None:
-            self.log('no url...')
+            print('no url...')
             return
 
         _item = app.DownloadManager.addURL(self.url, dir, str(name))
         await _item.start()
 
-    def get_encoded_url(self):
+    def getEncodedURL(self):
         return urllib.parse.quote(self.url).replace('/', '%')
 
     @staticmethod
-    def get_decoded_url(url):
+    def getDecodedURL(url):
         return urllib.parse.unquote(url).replace('%', '/')
 
     @staticmethod
-    def encode_url(url):
+    def encodeURL(url):
         return urllib.parse.quote(url).replace('/', '%')
 
     def set_node(self, bs_node):

@@ -1,0 +1,12 @@
+from App.Crawler.WebPage import WebPage
+from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
+
+class Screenshot:
+    def _get_path(self, page: WebPage, add: str = '1.jpeg'):
+        return page.getThumbsDir().joinpath(add)
+
+    async def make_viewport(self, page: WebPage, webdriver_page: WebdriverPage):
+        await webdriver_page._page.screenshot(path=self._get_path(page, 'viewport.jpeg'))
+
+    async def make_fullscreen(self, page: WebPage, webdriver_page: WebdriverPage):
+        await webdriver_page._page.screenshot(path=self._get_path(page, 'fullscreen.jpeg'), full_page = True)
