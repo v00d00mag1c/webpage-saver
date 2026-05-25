@@ -1,6 +1,6 @@
 from pydantic import Field, BaseModel
 from typing import Any
-from App import app
+from WebpageSaver import app
 import urllib
 
 class Asset(BaseModel):

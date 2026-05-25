@@ -1,7 +1,7 @@
-from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
-from App.API import API
+from WebpageSaver.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
+from WebpageSaver.API import API
 from aiohttp import web
-from App import config
+from WebpageSaver import config
 import asyncio
 import logging
 

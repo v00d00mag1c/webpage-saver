@@ -1,9 +1,9 @@
 from pydantic import Field, BaseModel
-from App import config
+from WebpageSaver import config
 from playwright.async_api import Playwright, async_playwright
-from App.Crawler.Components.UserAgent import UserAgent
-from App.Crawler.WebPage import WebPage
-from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
+from WebpageSaver.Crawler.Components.UserAgent import UserAgent
+from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Webdrivers.WebdriverPage import WebdriverPage
 import platform
 import logging
 

@@ -1,6 +1,6 @@
-from App import config
+from WebpageSaver import config
 from typing import Generator
-from App.Crawler.Webdrivers.Webdriver import Webdriver
+from WebpageSaver.Crawler.Webdrivers.Webdriver import Webdriver
 
 class WebdriversRepo:
     _list: list

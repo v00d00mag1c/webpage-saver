@@ -1,4 +1,4 @@
-from App.Crawler.Assets.Asset import Asset
+from WebpageSaver.Crawler.Assets.Asset impwort Asset
 from pydantic import Field
 from typing import Optional
 

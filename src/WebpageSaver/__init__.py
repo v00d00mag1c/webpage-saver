@@ -1,4 +1,4 @@
-from App.Config import Config
+from WebpageSaver.Config import Config
 import logging
 
 logging.basicConfig(level = logging.DEBUG)

@@ -1,5 +1,5 @@
-from App.Crawler.WebPage import WebPage
-from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
+from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Webdrivers.WebdriverPage import WebdriverPage
 
 class Screenshot:
     def _get_path(self, page: WebPage, add: str = '1.jpeg'):

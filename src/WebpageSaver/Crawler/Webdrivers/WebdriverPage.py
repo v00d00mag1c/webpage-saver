@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from App.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.WebPage import WebPage
 import asyncio
 from urllib.parse import urlparse
 

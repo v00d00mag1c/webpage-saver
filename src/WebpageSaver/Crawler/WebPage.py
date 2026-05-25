@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from pathlib import Path
-from App.Crawler.Assets.Asset import Asset
-from App.Crawler.Assets.Meta import Meta
-from App.Crawler.Assets.Script import Script
-from App.Crawler.Assets.Link import Link
-from App.Crawler.Assets.URL import URL
-from App.Crawler.Assets.Media import Media
+from WebpageSaver.Crawler.Assets.Asset import Asset
+from WebpageSaver.Crawler.Assets.Meta import Meta
+from WebpageSaver.Crawler.Assets.Script import Script
+from WebpageSaver.Crawler.Assets.Link import Link
+from WebpageSaver.Crawler.Assets.URL import URL
+from WebpageSaver.Crawler.Assets.Media import Media
 import logging
 
 class WebPage(BaseModel):

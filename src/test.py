@@ -1,6 +1,6 @@
-from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
-from App.Crawler.Webdrivers.Webdriver import Webdriver
-from App import app
+from WebpageSaver.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
+from WebpageSaver.Crawler.Webdrivers.Webdriver import Webdriver
+from WebpageSaver import app
 import argparse
 import asyncio
 

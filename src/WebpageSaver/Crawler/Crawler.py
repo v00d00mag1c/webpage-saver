@@ -1,8 +1,8 @@
-from App.Crawler.Components.GotRequest import GotRequest
-from App.Crawler.WebPage import WebPage
-from App.Crawler.Webdrivers.WebdriverPage import WebdriverPage
-from App.Crawler.Components.PageHTML import PageHTML
-from App.Crawler.Screenshot import Screenshot
+from WebpageSaver.Crawler.Components.GotRequest import GotRequest
+from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Webdrivers.WebdriverPage import WebdriverPage
+from WebpageSaver.Crawler.Components.PageHTML import PageHTML
+from WebpageSaver.Crawler.Screenshot import Screenshot
 import asyncio
 
 class Crawler:

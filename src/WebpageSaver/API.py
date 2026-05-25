@@ -1,7 +1,7 @@
-from App.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
-from App.Crawler.WebPage import WebPage
-from App.Crawler.Crawler import Crawler
-from App import config
+from WebpageSaver.Crawler.Webdrivers.WebdriversRepo import WebdriversRepo
+from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Crawler import Crawler
+from WebpageSaver import config
 
 class API:
     '''
