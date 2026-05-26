@@ -1,6 +1,7 @@
 from WebpageSaver.API import API
 from aiohttp import web
 from WebpageSaver import config
+from WebpageSaver.Crawler.Components.PageHTML import PageHTML
 import asyncio
 import logging
 import aiohttp_jinja2
@@ -17,15 +18,51 @@ def ip(request: web.Request):
 @routes.get('/page')
 async def gpbid(request: web.Request):
     page_id = request.rel_url.query.get('id')
-    print(page_id)
+    mode = request.rel_url.query.get('mode', 'page')
+    # page, meta, text_only, media_only
     pages = api.getPagesById(ids = [page_id], convert = False)
-
     if len(pages) == 0:
         return web.Response(status = 404)
 
     page = pages[0]
 
-    return web.Response(body = page.getRootFile().read_text(), content_type='text/html')
+    match (mode):
+        # Page display
+        case 'page':
+            remove_inline_styles = False
+            disable_js = False
+            disable_css = False
+            disable_iframes = False
+            remove_selectors = None
+
+            # Encoding
+            encoding = page.encoding
+            encoding = 'utf-8'
+            _en = request.rel_url.query.get('encoding')
+            if _en != None:
+                encoding = _en
+
+            print(encoding)
+            text = page.getRootFile().read_text(encoding = encoding)
+            html = PageHTML.from_html(text)
+
+            if disable_js:
+                html.clear_js()
+            if remove_inline_styles:
+                html.remove_inline_css()
+            if disable_css:
+                html.remove_css()
+            if disable_iframes:
+                html.remove_iframes()
+            if remove_selectors:
+                html.remove_selectors(remove_selectors)
+
+            html.make_correct_links(page)
+            head_html = html.move_head()
+
+            return web.Response(body = html.prettify(), 
+                                content_type='text/html',
+                                charset = encoding)
 
 @routes.get('/pages/save')
 def spw(request: web.Request):

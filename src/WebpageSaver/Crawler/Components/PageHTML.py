@@ -1,5 +1,6 @@
 
 from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Assets.Asset import Asset
 from WebpageSaver.Crawler.Assets.Meta import Meta
 from WebpageSaver.Crawler.Assets.Favicon import Favicon
 from WebpageSaver.Crawler.Assets.Media import Media
@@ -94,11 +95,11 @@ class PageHTML:
                             is_protocol = _parts[1] != '/'
 
                         if attr[0] == '#':
-                            self.log('url {0}: anchor'.format(attr))
+                            logging.info('url {0}: anchor'.format(attr))
                         elif attr[0] == '' or attr == None:
-                            self.log('url {0}: empty url'.format(attr))
+                            logging.info('url {0}: empty url'.format(attr))
                         elif is_protocol:
-                            self.log('url {0}: probaly protocol'.format(attr))
+                            logging.info('url {0}: probaly protocol'.format(attr))
                             url.set_protocol(attr)
                         else:
                             url.set_url(orig_page.getRelativeURL(attr))
@@ -150,7 +151,7 @@ class PageHTML:
                 tag.decompose()
 
     def clear_js(self):
-        # self.log('removing all js functions from tags')
+        logging.info('removing all js functions from tags and script tags')
 
         for tag in self.bs.select('script'):
             tag.decompose()
@@ -189,10 +190,10 @@ class PageHTML:
             del tag['integrity']
 
     def make_correct_links(self, page):
-        _s = page.html._get('file').get_storage_unit()
+        key_attr = page.identify
 
         for item in self.bs.select('link[href]'):
-            if item.get('data-__to_orig_key') != None:
+            if item.get(page.getOrigAttr()) != None:
                 continue
 
             _href = item.get('href')
@@ -200,32 +201,33 @@ class PageHTML:
                 item['href'] = '{0}{1}'.format(page.relative_url, _href)
 
         # replacing assets
-        for item in self.bs.select('[data-__to_orig]'):
+        for item in self.bs.select('[' + page.getOrigAttr() + ']'):
             #_url = base64.urlsafe_b64encode(('assets/' + _file_url).encode()).decode()
-            _url = item['data-__to_orig']
-            _id = page.html.get_asset_by_url(_url)
+            _url = item[page.getOrigAttr()]
+            _id = page.getAssetByUrl(_url)
             if _id == None:
-                logging.error('page {0}: element \"{1}\" is missing'.format(page.getDbIds(), _url))
+                logging.error('page {0}: element \"{1}\" is missing'.format('x', _url))
 
                 continue
 
-            key = item['data-__to_orig_key']
-            item[key] = '/storage/{0}/{1}/assets/{2}'.format(_s.getDbName(), _s.getDbId(), _id)
+            key = item[page.getKeyAttr()]
+            item[key] = '/storage/{0}/{1}/assets/{2}'
 
             # removing internal data attributes
             item.attrs = {key:value for key,value in item.attrs.items()
-                    if key not in ['data-__to_orig_key', 'data-__to_orig']}
+                    if key not in [page.getOrigAttr(), page.getKeyAttr()]}
 
         for item in self.bs.select('meta[http-equiv]'):
             item.decompose()
 
+        # Replacing hrefs
         for item in self.bs.select('a[href]'):
             _href = item.get('href')
             if _href:
                 if _href[0] == '#':
                     continue
 
-                item['href'] = '/?i=Web.Pages.Page&item={0}&web_act=url&url={1}'.format(page.getDbIds(), Asset.encode_url(_href))
+                item['href'] = '/?i=Web.Pages.Page&item={0}&web_act=url&url={1}'.format(0, Asset.encodeURL(_href))
 
     def prettify(self) -> str:
         return self.bs.prettify()
@@ -233,8 +235,9 @@ class PageHTML:
     @classmethod
     def from_html(cls, html: str):
         _src = cls()
-        _src.encoding = EncodingDetector.find_declared_encoding(html, is_html=True)
-        #_src.log('detected encoding {0}'.format(_src.encoding))
+
+        _encoding = EncodingDetector.find_declared_encoding(html, is_html=True)
+        logging.info('detected encoding {0}'.format(_encoding))
         _src.bs = BeautifulSoup(html, 'html.parser')
 
         return _src

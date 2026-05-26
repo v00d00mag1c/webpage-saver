@@ -11,6 +11,11 @@
 - [ ] random data attr, unique for every item
 - [ ] css url('') downloader
 - [ ] load page from html and browser extension
+- [ ] list of found encodings
+
+**assets**
+
+- [ ] detect if link javascript: or normal
 
 **webdrivers**
 

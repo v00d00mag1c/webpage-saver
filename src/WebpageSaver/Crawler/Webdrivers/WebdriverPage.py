@@ -1,13 +1,20 @@
 from pydantic import BaseModel, Field
 from WebpageSaver.Crawler.WebPage import WebPage
+from WebpageSaver.Crawler.Components.GotRequest import GotRequest
+from WebpageSaver.Crawler.Components.PageHTML import PageHTML
 import asyncio
+import logging
 from urllib.parse import urlparse
 
 class WebdriverPage:
     url_override: str = None
+    got_assets: list[GotRequest]
 
     _page = None
     _page_response = None
+
+    def __init__(self):
+        self.got_assets = []
 
     async def goto(self, url: str, wait_until: str = 'domcontentloaded'):
         _res = await self._page.goto(url, wait_until = wait_until)
@@ -29,7 +36,7 @@ class WebdriverPage:
         return await self._page.content()
 
     async def get_parsed_html(self):
-        return None
+        return PageHTML.from_html(await self.get_html())
 
     def get_url(self, orig: bool = False):
         _url = self.url_override
@@ -90,13 +97,13 @@ class WebdriverPage:
 
             await self._page.evaluate('() => window.scrollTo(0, document.body.scrollHeight);')
 
-            self.log('scrolling down: {0}'.format(scroll_iter))
+            logging.info('scrolling down: {0}'.format(scroll_iter))
 
             await asyncio.sleep(scroll_timeout)
 
             new_height = await self._page.evaluate('() => {return document.body.scrollHeight}')
             if new_height == last_height:
-                self.log('scrolling down: height is not updating')
+                logging.info('scrolling down: height is not updating')
 
                 break
 

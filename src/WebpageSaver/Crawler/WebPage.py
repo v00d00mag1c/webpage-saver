@@ -7,6 +7,7 @@ from WebpageSaver.Crawler.Assets.Script import Script
 from WebpageSaver.Crawler.Assets.Link import Link
 from WebpageSaver.Crawler.Assets.URL import URL
 from WebpageSaver.Crawler.Assets.Media import Media
+from WebpageSaver.Crawler.Assets.Favicon import Favicon
 from WebpageSaver import config
 import logging
 import json
@@ -31,6 +32,7 @@ class WebPage(BaseModel):
     links: list[Link] = Field(default = [])
     hyperlinks: list[URL] = Field(default = [])
     media: list[Media] = Field(default = [])
+    favicons: list[Favicon] = Field(default = [])
 
     # Mental disorders
 
@@ -78,6 +80,9 @@ class WebPage(BaseModel):
         Returns "index.html" path.
         '''
         return self.getDir().joinpath(self.root_file)
+
+    def getRootFileText(self):
+        return self.getRootFile().read_text(encoding = 'utf-8')
 
     def getDataFile(self) -> Path:
         return self.getDir().joinpath(self.data_file)
@@ -132,13 +137,13 @@ class WebPage(BaseModel):
             __link = None
             match (attempt):
                 case 0:
-                    __link = Asset.encode_url(url)
+                    __link = Asset.encodeURL(url)
                 case 1:
-                    __link = Asset.encode_url(url.strip())
+                    __link = Asset.encodeURL(url.strip())
                 case 2:
                     __link = url.replace('https', 'http', 1)
                 case 3:
-                    __link = Asset.encode_url(url.replace('http', 'https', 1))
+                    __link = Asset.encodeURL(url.replace('http', 'https', 1))
 
             if self.assets_links.get(__link) != None:
                 return self.assets_links.get(__link)
@@ -167,7 +172,7 @@ class WebPage(BaseModel):
     @classmethod
     def fromPath(cls, path_to: str):
         c = config.webpages_dir.joinpath(path_to).joinpath('data.json')
-        d = json.loads(c.read_text())
+        d = json.loads(c.read_text(encoding = 'utf-8'))
         m = WebPage.model_validate(d)
         m.root_directory = config.webpages_dir.joinpath(path_to).parent
         m.path_to = path_to
@@ -176,3 +181,9 @@ class WebPage(BaseModel):
 
     def dump(self):
         return self.model_dump(exclude_none = True, exclude_defaults = True)
+
+    def getKeyAttr(self):
+        return 'data-__orig-key'
+
+    def getOrigAttr(self):
+        return 'data-__orig'

@@ -26,13 +26,13 @@ class Webdriver(BaseModel):
 
         self._playwright = await async_playwright().start()
 
-        logging.log(logging.INFO, 'launching browser')
+        logging.info('launching browser')
 
         try:
             if size != None:
                 self.viewport = {"width": int(size[0]), "height": int(size[1])}
         except Exception as e:
-            logging.log(logging.ERROR, e)
+            logging.info(e)
 
         self._browser = await self._launch_browser()
         self._context = await self._browser.new_context(

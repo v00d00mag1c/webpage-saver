@@ -1,24 +1,28 @@
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, ConfigDict
 from typing import Any
 from WebpageSaver import app
 import urllib
+import logging
+import aiohttp
+import aiofiles
 
 class Asset(BaseModel):
     url: str = Field(default = None)
     bs_node: Any = Field(default = None, exclude = True)
+    model_config = ConfigDict(extra='allow')
 
     # we know that contents are downloaded so it will available in the displayment
-    def replace(self):
+    def replace(self, page):
         _node = self.get_node()
 
         if _node != None and (_node.get('href') or _node.get('src')):
-            _node['data-__to_orig'] = self.url
+            _node[page.getOrigAttr()] = self.url
             _key = 'href'
 
             if _node.get('src') != None and _node.get('src') != '':
                 _key = 'src'
 
-            _node['data-__to_orig_key'] = _key
+            _node[page.getKeyAttr()] = _key
             _node[_key] = ''
 
     def decompose(self):
@@ -42,14 +46,18 @@ class Asset(BaseModel):
 
     async def download_function(self, dir, name: str = None):
         if name == None:
-            name = self.get_encoded_url()
+            name = self.getEncodedURL()
 
         if self.url == None:
-            print('no url...')
+            logging.info('no url...')
             return
 
-        _item = app.DownloadManager.addURL(self.url, dir, str(name))
-        await _item.start()
+        # :))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as response:
+                async with aiofiles.open(str(dir.joinpath(name)), mode='wb') as f:
+                    async for chunk in response.content.iter_chunked(4096):
+                        await f.write(chunk)
 
     def getEncodedURL(self):
         return urllib.parse.quote(self.url).replace('/', '%')
