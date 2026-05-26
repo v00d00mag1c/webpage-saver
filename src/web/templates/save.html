@@ -1,0 +1,26 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+<div>
+    <input type="text" id="url">
+    <input type="submit" onclick="submit()" value="save">
+</div>
+
+<script>
+    async function submit() {
+        const f = new FormData()
+        f.append('url', document.querySelector('#url').value)
+
+        const res = await fetch('/api/pages/save', {
+            method: 'POST',
+            body: f
+        })
+
+        const items = await res.json()
+        const item = items[0]
+        const url = item.path_to
+
+        window.location.assign('/page?id=' + url)
+    }
+</script>
+{% endblock %}

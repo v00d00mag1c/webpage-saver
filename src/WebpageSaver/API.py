@@ -68,3 +68,7 @@ class API:
                 payload.append(item.toModel())
 
         return payload
+
+    def deletePagesById(self, id: str) -> None:
+        for item in Page.select().where(Page.path_to == id):
+            item.delete_instance()
