@@ -7,7 +7,9 @@ from WebpageSaver.Crawler.Assets.Script import Script
 from WebpageSaver.Crawler.Assets.Link import Link
 from WebpageSaver.Crawler.Assets.URL import URL
 from WebpageSaver.Crawler.Assets.Media import Media
+from WebpageSaver import config
 import logging
+import json
 
 class WebPage(BaseModel):
 
@@ -34,7 +36,9 @@ class WebPage(BaseModel):
 
     identify: str = Field(default = None)
     root_directory: str = Field(default = None, exclude = True)
+    path_to: str = Field(default = None)
     root_file: str = Field(default = 'index.html')
+    data_file: str = Field(default = 'data.json')
     assets_directory: str = Field(default = 'assets')
     thumbs_directory: str = Field(default = 'thumbs')
     encoding: str = Field(default = 'utf-8')
@@ -58,6 +62,7 @@ class WebPage(BaseModel):
         '''
         _now = datetime.now()
         self.identify = f"{_now.strftime('%Y-%m-%d-%H-%M-%S-%S-%f')}"
+        self.path_to = self.identify
         self.taken = _now.timestamp()
 
         return self.identify
@@ -74,10 +79,10 @@ class WebPage(BaseModel):
         '''
         return self.getDir().joinpath(self.root_file)
 
+    def getDataFile(self) -> Path:
+        return self.getDir().joinpath(self.data_file)
+
     def getAssetsDir(self) -> Path:
-        '''
-        Returns assets dir.
-        '''
         return self.getDir().joinpath(self.assets_directory)
 
     def getThumbsDir(self) -> Path:
@@ -113,6 +118,10 @@ class WebPage(BaseModel):
 
             with open(self.getRootFile(), 'w', encoding = 'utf-8') as file:
                 file.write(html)
+
+    def saveData(self):
+        with open(str(self.getDataFile()), 'w', encoding = 'utf-8') as file:
+            json.dump(self.model_dump(exclude_none = True, exclude_defaults = True), file, ensure_ascii = False)
 
     def getAssetByUrl(self, url: str):
         '''
@@ -154,3 +163,16 @@ class WebPage(BaseModel):
                 return self.relative_url + '/' + url
         else:
             return self.relative_url # ???
+
+    @classmethod
+    def fromPath(cls, path_to: str):
+        c = config.webpages_dir.joinpath(path_to).joinpath('data.json')
+        d = json.loads(c.read_text())
+        m = WebPage.model_validate(d)
+        m.root_directory = config.webpages_dir.joinpath(path_to).parent
+        m.path_to = path_to
+
+        return m
+
+    def dump(self):
+        return self.model_dump(exclude_none = True, exclude_defaults = True)

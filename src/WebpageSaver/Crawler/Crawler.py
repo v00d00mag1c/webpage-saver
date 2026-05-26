@@ -147,5 +147,6 @@ class Crawler:
         #        self.log_error(e)
 
         page.write(html.prettify())
+        page.saveData()
 
         #await self._after_crawl(page, i)
