@@ -45,7 +45,8 @@ class Crawler:
                     request.asset = Asset(url=_url)
                     _i = self.i.getIndex()
                     #_dir = _orig_dir.joinpath(request.asset.getEncodedURL())
-                    page.assets_links[request.asset.getEncodedURL()] = _i
+                    page.addAsset(_i, request)
+                    #page.assets_links[request.asset.getEncodedURL()] = _i
 
                     _dir = _orig_dir.joinpath(str(_i))
                     buffer = await response.body()
@@ -77,7 +78,8 @@ class Crawler:
         await webdriver_page.integrate(page)
         await asyncio.sleep(sleep_before_crawl)
 
-        page.setEncoding(await webdriver_page.get_encoding())
+        async for e in webdriver_page.get_encoding():
+            page.setEncoding(e)
 
         if scroll_down:
             await webdriver_page.scroll_down(scroll_down_max_cycles)
@@ -90,8 +92,7 @@ class Crawler:
             await Screenshot().make_fullscreen(page, webdriver_page)
 
         html = await webdriver_page.get_parsed_html()
-        if page.encoding == None:
-            page.setEncoding(html.encoding)
+        page.addEncoding(html.encoding)
 
         for meta in html.get_meta(page):
             page.meta.append(meta)
@@ -146,6 +147,7 @@ class Crawler:
             except Exception as e:
                 logging.exception(e)
 
+        page._create_index()
         page.write(html.prettify())
         page.saveData()
 

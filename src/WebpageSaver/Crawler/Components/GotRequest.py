@@ -5,9 +5,9 @@ import logging
 
 class GotRequest(BaseModel):
     url: str = Field(default = None)
-    request: Any = Field(default = None)
-    response: Any = Field(default = None)
     asset: Asset = Field(default = None)
+    request: Any = Field(default = None, exclude = True)
+    response: Any = Field(default = None, exclude = True)
     done: bool = Field(default = False)
 
     def url_matches(self, url: str):

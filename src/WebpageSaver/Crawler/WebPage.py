@@ -8,6 +8,7 @@ from WebpageSaver.Crawler.Assets.Link import Link
 from WebpageSaver.Crawler.Assets.URL import URL
 from WebpageSaver.Crawler.Assets.Media import Media
 from WebpageSaver.Crawler.Assets.Favicon import Favicon
+from WebpageSaver.Crawler.Components.GotRequest import GotRequest
 from WebpageSaver import config
 import logging
 import json
@@ -25,7 +26,7 @@ class WebPage(BaseModel):
     base_url: str = Field(default = None)
     relative_url: str = Field(default = None)
 
-    # Additional
+    # Page content
 
     meta: list[Meta] = Field(default = [])
     script: list[Script] = Field(default = [])
@@ -34,7 +35,7 @@ class WebPage(BaseModel):
     media: list[Media] = Field(default = [])
     favicons: list[Favicon] = Field(default = [])
 
-    # Mental disorders
+    # Other
 
     identify: str = Field(default = None)
     root_directory: str = Field(default = None, exclude = True)
@@ -43,20 +44,39 @@ class WebPage(BaseModel):
     data_file: str = Field(default = 'data.json')
     assets_directory: str = Field(default = 'assets')
     thumbs_directory: str = Field(default = 'thumbs')
-    encoding: str = Field(default = 'utf-8')
-    assets_links: dict = Field(default = {})
+
+    encodings: list[str] = Field(default = [])
+    common_encoding_id: int = Field(default = 0)
+
+    assets_links: dict[int, GotRequest] = Field(default = {})
 
     def init(self, path: Path):
+        self.root_directory = path
+
         self.setDate()
-        self._create(path)
+        self.getDir().mkdir(exist_ok=True)
+        self.getThumbsDir().mkdir(exist_ok=True)
+        self.getAssetsDir().mkdir(exist_ok=True)
+        #self._create_index(path)
+
+    def addEncoding(self, encoding: str):
+        '''
+        Just adds the encoding
+        '''
+        if encoding not in self.encodings and encoding is not None:
+            self.encodings.append(encoding)
 
     def setEncoding(self, val: str):
         '''
-        Sets the encoding.
+        Sets the encoding as default
         '''
-        #print('set encoding to {0}'.format(val))
+        self.addEncoding(val)
+        self.common_encoding_id = self.encodings.index(val)
 
-        self.encoding = val
+    @property
+    def encoding(self) -> str:
+        #print(self.encodings, self.common_encoding_id)
+        return self.encodings[self.common_encoding_id]
 
     def setDate(self) -> str:
         '''
@@ -81,9 +101,6 @@ class WebPage(BaseModel):
         '''
         return self.getDir().joinpath(self.root_file)
 
-    def getRootFileText(self):
-        return self.getRootFile().read_text(encoding = 'utf-8')
-
     def getDataFile(self) -> Path:
         return self.getDir().joinpath(self.data_file)
 
@@ -93,17 +110,12 @@ class WebPage(BaseModel):
     def getThumbsDir(self) -> Path:
         return self.getDir().joinpath(self.thumbs_directory)
 
-    def _create(self, root_dir: Path):
+    def _create_index(self):
         '''
         Creates dir in storage, index.html and assets.
         '''
-        self.root_directory = root_dir
 
-        self.getDir().mkdir(exist_ok=True)
-        self.getThumbsDir().mkdir(exist_ok=True)
-        self.getAssetsDir().mkdir(exist_ok=True)
-
-        index_file = open(str(self.getRootFile()), 'w', encoding = self.encoding)
+        index_file = open(str(self.getRootFile()), 'w', encoding = 'utf-8')
         index_file.close()
 
     def write(self, html: str):
@@ -111,7 +123,6 @@ class WebPage(BaseModel):
         Writes changes to index.html
         '''
         #_detect = chardet.detect(html.encode('utf-8', errors='ignore'))
-
         #self.setEncoding(_detect.get('encoding'))
 
         try:
@@ -132,23 +143,19 @@ class WebPage(BaseModel):
         '''
         Unwraps asset by its URL
         '''
-        asset = None
-        for attempt in range(0, 4):
-            __link = None
-            match (attempt):
-                case 0:
-                    __link = Asset.encodeURL(url)
-                case 1:
-                    __link = Asset.encodeURL(url.strip())
-                case 2:
-                    __link = url.replace('https', 'http', 1)
-                case 3:
-                    __link = Asset.encodeURL(url.replace('http', 'https', 1))
+        _a = self.assets_links.items()
+        for itm in _a:
+            if itm[1].url == url:
+                return (itm[0], itm[1])
 
-            if self.assets_links.get(__link) != None:
-                return self.assets_links.get(__link)
+    def getAssetPathById(self, index: int):
+        return self.getAssetsDir().joinpath(str(index))
 
-        return asset
+    def getAssetById(self, id: int):
+        return self.assets_links[id]
+
+    def addAsset(self, ident: int, request: GotRequest):
+        self.assets_links[ident] = request
 
     def getRelativeURL(self, url: str):
         if not url.startswith('http'):

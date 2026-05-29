@@ -14,7 +14,7 @@ import re
 import logging
 
 class PageHTML:
-    bs = None
+    bs: BeautifulSoup = None
     encoding: str
 
     def get_favicons(self, orig_page: WebPage, take_default: bool = True) -> Generator:
@@ -189,9 +189,7 @@ class PageHTML:
         for tag in self.bs.find_all(attrs={"integrity": True}):
             del tag['integrity']
 
-    def make_correct_links(self, page):
-        key_attr = page.identify
-
+    def make_correct_links(self, page: WebPage):
         for item in self.bs.select('link[href]'):
             if item.get(page.getOrigAttr()) != None:
                 continue
@@ -210,8 +208,8 @@ class PageHTML:
 
                 continue
 
-            key = item[page.getKeyAttr()]
-            item[key] = '/storage/{0}/{1}/assets/{2}'
+            _key = item[page.getKeyAttr()]
+            item[_key] = '/page/asset?id={0}&path={1}'.format(page.identify, _id[0])
 
             # removing internal data attributes
             item.attrs = {key:value for key,value in item.attrs.items()
@@ -227,17 +225,19 @@ class PageHTML:
                 if _href[0] == '#':
                     continue
 
-                item['href'] = '/?i=Web.Pages.Page&item={0}&web_act=url&url={1}'.format(0, Asset.encodeURL(_href))
+                item['href'] = '/page?mode=url&id={0}&url={1}'.format(page.identify, Asset.encodeURL(_href))
 
-    def prettify(self) -> str:
-        return self.bs.prettify()
+    def prettify(self, encoding: str = 'utf-8') -> str:
+        return self.bs.prettify(encoding = encoding)
 
     @classmethod
     def from_html(cls, html: str):
         _src = cls()
 
-        _encoding = EncodingDetector.find_declared_encoding(html, is_html=True)
-        logging.info('detected encoding {0}'.format(_encoding))
+        _src.encoding = EncodingDetector.find_declared_encoding(html, is_html=True)
+
+        logging.info('detected encoding {0}'.format(_src.encoding))
+
         _src.bs = BeautifulSoup(html, 'html.parser')
 
         return _src

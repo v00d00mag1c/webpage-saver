@@ -1,11 +1,14 @@
 from WebpageSaver.API import API
+from WebpageSaver.Crawler.Assets.Asset import Asset
 from aiohttp import web
 from WebpageSaver import config
 from WebpageSaver.Crawler.Components.PageHTML import PageHTML
+from pathlib import Path
 import asyncio
 import logging
 import aiohttp_jinja2
 import jinja2
+import urllib
 
 api = API()
 
@@ -17,9 +20,10 @@ def ip(request: web.Request):
 
 @routes.get('/page')
 async def gpbid(request: web.Request):
-    page_id = request.rel_url.query.get('id')
-    mode = request.rel_url.query.get('mode', 'page')
-    # page, meta, text_only, media_only
+    query = request.rel_url.query
+    page_id = query.get('id')
+    mode = query.get('mode', 'page')
+    # page, url, meta, text_only, media_only
     pages = api.getPagesById(ids = [page_id], convert = False)
     if len(pages) == 0:
         return web.Response(status = 404)
@@ -37,12 +41,9 @@ async def gpbid(request: web.Request):
 
             # Encoding
             encoding = page.encoding
-            encoding = 'utf-8'
-            _en = request.rel_url.query.get('encoding')
-            if _en != None:
-                encoding = _en
+            if query.get('encoding') != None:
+                encoding = query.get('encoding')
 
-            print(encoding)
             text = page.getRootFile().read_text(encoding = encoding)
             html = PageHTML.from_html(text)
 
@@ -58,19 +59,57 @@ async def gpbid(request: web.Request):
                 html.remove_selectors(remove_selectors)
 
             html.make_correct_links(page)
-            head_html = html.move_head()
+            #head_html = html.move_head()
 
-            return web.Response(body = html.prettify(), 
-                                content_type='text/html',
-                                charset = encoding)
+            return web.Response(
+                body = html.prettify(encoding = encoding), 
+                content_type='text/html',
+                charset = encoding
+            )
+
+        case 'url':
+            p_url = query.get('url')
+            new_url = Asset.getDecodedURL(p_url)
+            redirect_url = page.getRelativeURL(new_url)
+
+            return aiohttp_jinja2.render_template('url.html', request, {
+                'url': redirect_url
+            })
+
+@routes.get('/page/asset')
+async def gpa(request: web.Request):
+    page_id = request.rel_url.query.get('id')
+    path_id = request.rel_url.query.get('path', '')
+    #path_id = urllib.parse.unquote(path_id)
+
+    pages = api.getPagesById(ids = [page_id], convert = False)
+    if len(pages) == 0:
+        return web.Response(status = 404)
+
+    page = pages[0]
+    path = page.getAssetPathById(path_id)
+
+    #decode_path = request.query.get('d') == '1'
+    #if decode_path:
+    #    path = base64.urlsafe_b64decode(path.encode('utf-8')).decode()
+
+    assets_path = page.getAssetsDir()
+    file: Path = assets_path.joinpath(path)
+
+    try:
+        file.absolute().relative_to(assets_path.resolve())
+    except (ValueError, RuntimeError) as e:
+        logging.exception(e)
+        raise web.HTTPForbidden(reason="Access denied")
+
+    if not file.is_file():
+        raise web.HTTPNotFound(text="Not found file")
+
+    return web.FileResponse(str(file))
 
 @routes.get('/pages/save')
 def spw(request: web.Request):
     return aiohttp_jinja2.render_template('save.html',request,{})
-
-@routes.get('/pages/url')
-def sud(request: web.Request):
-    return aiohttp_jinja2.render_template('url.html',request,{})
 
 @routes.get('/api/webdrivers')
 async def gw(request: web.Request):

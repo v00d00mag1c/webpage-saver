@@ -5,6 +5,7 @@ from WebpageSaver.Crawler.Components.PageHTML import PageHTML
 import asyncio
 import logging
 from urllib.parse import urlparse
+from typing import AsyncGenerator
 
 class WebdriverPage:
     url_override: str = None
@@ -61,27 +62,31 @@ class WebdriverPage:
 
         return _base_url
 
-    async def get_encoding(self):
-        #page = self._page.get()
-        #charset = await page.locator('meta[charset]').get_attribute('charset')
-        #if charset:
-        #    return charset
+    async def get_encoding(self) -> AsyncGenerator[str]:
+        try:
+            charset = await self._page.locator('meta[charset]').get_attribute('charset')
+            if charset:
+                yield charset
+        except:
+            yield 'utf-8'
 
-        #content_type = await page.locator('meta[http-equiv=\"Content-Type\"]').get_attribute('content')
-        #if content_type and 'charset=' in content_type:
-        #    return content_type.split('charset=')[1].lower()
+        try:
+            content_type = await self._page.locator('meta[http-equiv=\"Content-Type\"]').get_attribute('content')
+            if content_type and 'charset=' in content_type:
+                yield content_type.split('charset=')[1].lower()
+        except:
+            yield 'utf-8'
 
-        return 'utf-8'
         try:
             content_type = self._page_response.headers.get('content-type', '')
             if 'charset=' in content_type.lower():
-                return content_type.lower().split('charset=')[1].split(';')[0].strip()
+                yield content_type.lower().split('charset=')[1].split(';')[0].strip()
             elif 'utf-8' in content_type.lower():
-                return 'utf-8'
+                yield 'utf-8'
         except Exception as e:
-            self.log_error(e)
+            logging.exception(e)
 
-        return 'utf-8'
+            yield 'utf-8'
 
     def override_url(self, url: str):
         self.url_override = url
