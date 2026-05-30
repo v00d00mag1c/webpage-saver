@@ -29,10 +29,10 @@ class WebPage(BaseModel):
     # Page content
 
     meta: list[Meta] = Field(default = [])
-    script: list[Script] = Field(default = [])
-    links: list[Link] = Field(default = [])
-    hyperlinks: list[URL] = Field(default = [])
-    media: list[Media] = Field(default = [])
+    #script: list[Script] = Field(default = [])
+    #links: list[Link] = Field(default = [])
+    #hyperlinks: list[URL] = Field(default = [])
+    #media: list[Media] = Field(default = [])
     favicons: list[Favicon] = Field(default = [])
 
     # Other
@@ -49,6 +49,7 @@ class WebPage(BaseModel):
     common_encoding_id: int = Field(default = 0)
 
     assets_links: dict[int, GotRequest] = Field(default = {})
+    linked_pages: list[str] = Field(default = [])
 
     def init(self, path: Path):
         self.root_directory = path
@@ -70,8 +71,11 @@ class WebPage(BaseModel):
         '''
         Sets the encoding as default
         '''
+
         self.addEncoding(val)
-        self.common_encoding_id = self.encodings.index(val)
+        if val != None:
+            self.common_encoding_id = self.encodings.index(val)
+            logging.info('setting encoding to ' + str(val))
 
     @property
     def encoding(self) -> str:
@@ -129,10 +133,10 @@ class WebPage(BaseModel):
             with open(self.getRootFile(), 'w', encoding = self.encoding) as file:
                 file.write(html)
         except Exception as e:
-            logging.error("Error when writing file, encoding is {0}, trying UTF-8. ".format(self.encoding))
+            logging.error("Error when writing file, encoding is {0}, trying writing bytes. ".format(self.encoding))
             logging.exception(e)
 
-            with open(self.getRootFile(), 'w', encoding = 'utf-8') as file:
+            with open(self.getRootFile(), 'wb') as file:
                 file.write(html)
 
     def saveData(self):
@@ -152,7 +156,7 @@ class WebPage(BaseModel):
         return self.getAssetsDir().joinpath(str(index))
 
     def getAssetById(self, id: int):
-        return self.assets_links[id]
+        return self.assets_links.get(int(id))
 
     def addAsset(self, ident: int, request: GotRequest):
         self.assets_links[ident] = request

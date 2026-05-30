@@ -29,6 +29,7 @@ async def gpbid(request: web.Request):
         return web.Response(status = 404)
 
     page = pages[0]
+    print(page.linked_pages)
 
     match (mode):
         # Page display
@@ -70,10 +71,12 @@ async def gpbid(request: web.Request):
         case 'url':
             p_url = query.get('url')
             new_url = Asset.getDecodedURL(p_url)
+            print(new_url)
             redirect_url = page.getRelativeURL(new_url)
 
             return aiohttp_jinja2.render_template('url.html', request, {
-                'url': redirect_url
+                'url': redirect_url,
+                'id': page.identify
             })
 
 @routes.get('/page/asset')
@@ -84,10 +87,15 @@ async def gpa(request: web.Request):
 
     pages = api.getPagesById(ids = [page_id], convert = False)
     if len(pages) == 0:
-        return web.Response(status = 404)
+        return web.HTTPNotFound(body = 'Not found page')
 
     page = pages[0]
+    req = page.getAssetById(path_id)
+    if req == None:
+        return web.HTTPNotFound(body = 'Not found asset')
+
     path = page.getAssetPathById(path_id)
+    file_name = req.asset.getName()
 
     #decode_path = request.query.get('d') == '1'
     #if decode_path:
@@ -105,7 +113,10 @@ async def gpa(request: web.Request):
     if not file.is_file():
         raise web.HTTPNotFound(text="Not found file")
 
-    return web.FileResponse(str(file))
+    return web.FileResponse(str(file), headers = {
+        'Content-Disposition': f'attachment; filename="{file_name}"',
+        'Content-Type': req.getContentType()
+    })
 
 @routes.get('/pages/save')
 def spw(request: web.Request):
@@ -119,8 +130,13 @@ async def gw(request: web.Request):
 async def sp(request: web.Request):
     inputs = await request.post()
     url = inputs.get('url')
+    link_to = inputs.get('link_to')
+    ps = api.getPagesById(ids = [link_to], convert = False)
 
-    payload = await api.savePage(url = url)
+    if len(ps) == 0:
+        return web.HTTPNotFound(body = 'Not found page to link')
+
+    payload = await api.savePage(url = url, link_pages = ps)
 
     return web.json_response(payload)
 
@@ -136,6 +152,16 @@ async def gp(request: web.Request):
 async def dpbid(request: web.Request):
     page_id = request.rel_url.query.get('id')
     api.deletePagesById(id = page_id)
+
+    return web.Response(body = 1, content_type='text/html')
+
+@routes.patch('/api/page')
+async def epbid(request: web.Request):
+    page_id = request.rel_url.query.get('id')
+    new_taken = request.rel_url.query.get('new_taken')
+    new_name = request.rel_url.query.get('new_name')
+    new_url = request.rel_url.query.get('new_url')
+    #api.editPageById(id = page_id)
 
     return web.Response(body = 1, content_type='text/html')
 

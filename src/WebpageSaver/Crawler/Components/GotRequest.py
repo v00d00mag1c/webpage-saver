@@ -5,10 +5,17 @@ import logging
 
 class GotRequest(BaseModel):
     url: str = Field(default = None)
+    content_type: str = Field(default = None)
     asset: Asset = Field(default = None)
     request: Any = Field(default = None, exclude = True)
     response: Any = Field(default = None, exclude = True)
     done: bool = Field(default = False)
+
+    def getContentType(self) -> str:
+        if self.content_type:
+            return self.content_type
+
+        return ''
 
     def url_matches(self, url: str):
         _s = self.url.replace('https://', '').replace('http://', '')

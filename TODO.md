@@ -7,11 +7,10 @@
 **downloader**
 
 - [x] make screenshots
-- [ ] save assets
-- [ ] random data attr, unique for every item
+- [x] save assets
 - [ ] css url('') downloader
 - [ ] load page from html and browser extension
-- [ ] list of found encodings
+- [x] list of found encodings
 
 **assets**
 

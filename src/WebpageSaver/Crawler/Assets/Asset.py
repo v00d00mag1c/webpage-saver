@@ -7,9 +7,17 @@ import aiohttp
 import aiofiles
 
 class Asset(BaseModel):
+    '''
+    Anything that contains url or media data
+    '''
     url: str = Field(default = None)
     bs_node: Any = Field(default = None, exclude = True)
     model_config = ConfigDict(extra='allow')
+
+    def getName(self):
+        d = self.url.split('/')
+
+        return d[-1]
 
     # we know that contents are downloaded so it will available in the displayment
     def replace(self, page):
@@ -52,7 +60,6 @@ class Asset(BaseModel):
             logging.info('no url...')
             return
 
-        # :))
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url) as response:
                 async with aiofiles.open(str(dir.joinpath(name)), mode='wb') as f:
@@ -60,15 +67,15 @@ class Asset(BaseModel):
                         await f.write(chunk)
 
     def getEncodedURL(self):
-        return urllib.parse.quote(self.url).replace('/', '%')
+        return urllib.parse.quote(self.url)
 
     @staticmethod
     def getDecodedURL(url):
-        return urllib.parse.unquote(url).replace('%', '/')
+        return urllib.parse.unquote(url)
 
     @staticmethod
     def encodeURL(url):
-        return urllib.parse.quote(url).replace('/', '%')
+        return urllib.parse.quote(url)
 
     def set_node(self, bs_node):
         self.bs_node = bs_node

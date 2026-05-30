@@ -2,4 +2,16 @@
 
 {% block body %}
 {{url}}
+<div>
+    <a href="javascript:history.back()"><input type="button" value="back"></a>
+    <a href="{{url}}"><input type="button" value="go to original"></a>
+    <a href="javascript:save_page_link()"><input type="button" value="archive"></a>
+    <a><input type="button" value="find"></a>
+</div>
+
+<script>
+    async function save_page_link() {
+        await save_submit("{{url}}", "{{id}}")
+    }
+</script>
 {% endblock %}

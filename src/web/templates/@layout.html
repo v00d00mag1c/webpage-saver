@@ -5,7 +5,27 @@
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
- 
+
+<script>
+    async function save_submit(url, link_to = null) {
+        const f = new FormData()
+        f.append('url', url)
+        if (link_to) {
+            f.append('link_to', link_to)
+        }
+
+        const res = await fetch('/api/pages/save', {
+            method: 'POST',
+            body: f
+        })
+
+        const items = await res.json()
+        const item = items[0]
+
+        window.location.assign('/page?id=' + item.path_to)
+    }
+</script>
+
 {% block body %}
 {% endblock %}
  

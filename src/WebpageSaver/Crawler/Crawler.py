@@ -38,7 +38,7 @@ class Crawler:
                     if request.request.redirected_from:
                         logging.info('assets: redirected from {0}'.format(_url))
                         _url_r = request.request.redirected_from.url
-                        for _item in page._page.got_assets:
+                        for _item in webdriver_page.got_assets:
                             if _item.url_matches(_url_r):
                                 request = _item
 
@@ -48,6 +48,8 @@ class Crawler:
                     page.addAsset(_i, request)
                     #page.assets_links[request.asset.getEncodedURL()] = _i
 
+                    headers = response.headers
+                    request.content_type = headers.get('content-type')
                     _dir = _orig_dir.joinpath(str(_i))
                     buffer = await response.body()
                     with open(str(_dir), 'wb+') as _file:
@@ -79,7 +81,7 @@ class Crawler:
         await asyncio.sleep(sleep_before_crawl)
 
         async for e in webdriver_page.get_encoding():
-            page.setEncoding(e)
+            page.addEncoding(e)
 
         if scroll_down:
             await webdriver_page.scroll_down(scroll_down_max_cycles)
@@ -92,11 +94,12 @@ class Crawler:
             await Screenshot().make_fullscreen(page, webdriver_page)
 
         html = await webdriver_page.get_parsed_html()
-        page.addEncoding(html.encoding)
+        page.setEncoding(html.encoding)
 
         for meta in html.get_meta(page):
             page.meta.append(meta)
 
+        '''
         for link in html.get_links(page):
             page.links.append(link)
 
@@ -105,6 +108,7 @@ class Crawler:
 
         for link in html.get_media(page):
             page.media.append(link)
+        '''
 
         results = dict()
         for key in ['get_favicons', 'get_media', 'get_downloadable_links', 'get_scripts']:

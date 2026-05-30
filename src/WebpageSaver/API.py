@@ -23,7 +23,8 @@ class API:
 
     async def savePage(self, 
                        url: str, 
-                       webdriver_id: int = None):
+                       webdriver_id: int = None,
+                       link_pages: list[WebPage] = None):
         # TODO: w selection
         crawler = Crawler()
 
@@ -35,6 +36,11 @@ class API:
             url = url
         )
         page.init(config.webpages_dir)
+
+        for p in link_pages:
+            p.linked_pages.append(page.identify)
+            p.saveData()
+
         browser_page = await webdriver.openPage(page)
 
         await crawler.register(page, browser_page)
