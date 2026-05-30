@@ -13,7 +13,7 @@ class BaseModel(Model):
 
 class Page(BaseModel):
     title = TextField()
-    path_to = IntegerField(unique=True)
+    path_to = TextField(unique=True)
     taken_at = FloatField()
     #url = TextField()
     #relative_url = TextField()

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Generator
 from datetime import datetime
 from pathlib import Path
 from WebpageSaver.Crawler.Assets.Asset import Asset
@@ -29,11 +30,11 @@ class WebPage(BaseModel):
     # Page content
 
     meta: list[Meta] = Field(default = [])
+    favicons: list[Favicon] = Field(default = [])
     #script: list[Script] = Field(default = [])
     #links: list[Link] = Field(default = [])
     #hyperlinks: list[URL] = Field(default = [])
     #media: list[Media] = Field(default = [])
-    favicons: list[Favicon] = Field(default = [])
 
     # Other
 
@@ -198,3 +199,13 @@ class WebPage(BaseModel):
 
     def getOrigAttr(self):
         return 'data-__orig'
+
+    def has_linked_pages(self):
+        print(self.linked_pages)
+        return len(self.linked_pages) > 0
+
+    def getLinkedPages(self) -> Generator:
+        from WebpageSaver.Cache import Page as DBPage
+
+        for itm in DBPage.select().where(DBPage.path_to.in_(self.linked_pages)).order_by(DBPage.taken_at.desc()):
+            yield itm.toModel()

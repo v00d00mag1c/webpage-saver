@@ -83,6 +83,9 @@ class Crawler:
         async for e in webdriver_page.get_encoding():
             page.addEncoding(e)
 
+        if make_screenshots:
+            await Screenshot().make_viewport(page, webdriver_page)
+
         if scroll_down:
             await webdriver_page.scroll_down(scroll_down_max_cycles)
 
@@ -90,7 +93,6 @@ class Crawler:
         await webdriver_page._page.wait_for_timeout(sleep_network_timeout)
 
         if make_screenshots:
-            await Screenshot().make_viewport(page, webdriver_page)
             await Screenshot().make_fullscreen(page, webdriver_page)
 
         html = await webdriver_page.get_parsed_html()

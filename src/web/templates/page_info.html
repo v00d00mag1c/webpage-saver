@@ -1,0 +1,59 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+
+<div>
+    <b>{{page.title}}</b>
+
+    <div>
+        <a href="/page/screenshot?id={{page.identify}}&file=fullscreen.jpeg">
+            <img src="/page/screenshot?id={{page.identify}}&file=viewport.jpeg" alt="">
+        </a>
+    </div>
+
+    <div>
+        <p>taken: {{taken}}</p>
+        <p>url: {{page.url}}</p>
+        <p>base: {{page.base_url}}</p>
+    </div>
+
+    <hr>
+
+    <div>
+        <a href="/page?id={{page.identify}}">open</a>
+        <a href="/page?id={{page.identify}}">open (without js)</a>
+    </div>
+
+    <hr>
+
+    <div>
+        <a href="/page?id={{page.identify}}&mode=text">text only</a>
+    </div>
+    <div>
+        <a href="/page?id={{page.identify}}&mode=all_assets">all assets</a>
+        <a href="/page?id={{page.identify}}&mode=media">media</a>
+        <a href="/page?id={{page.identify}}&mode=metatags">meta</a>
+        <a href="/page?id={{page.identify}}&mode=hyperlinks">hyperlinks from this page</a>
+    </div>
+
+    <hr>
+
+    {% if page.has_linked_pages() %}
+    <div>
+        <p>this page is connected with:</p>
+
+        <table>
+            <tbody>
+                {% for itm in linked %}
+                <tr>
+                    <td>{{itm.url}}</td>
+                    <td><a href="/page?id={{itm.identify}}">{{itm.title}}</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

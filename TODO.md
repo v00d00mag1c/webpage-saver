@@ -11,6 +11,7 @@
 - [ ] css url('') downloader
 - [ ] load page from html and browser extension
 - [x] list of found encodings
+- [ ] screenshot canvases
 
 **assets**
 

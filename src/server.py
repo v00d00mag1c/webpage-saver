@@ -4,6 +4,7 @@ from aiohttp import web
 from WebpageSaver import config
 from WebpageSaver.Crawler.Components.PageHTML import PageHTML
 from pathlib import Path
+from datetime import datetime
 import asyncio
 import logging
 import aiohttp_jinja2
@@ -14,6 +15,15 @@ api = API()
 
 routes = web.RouteTableDef()
 
+def check_path(maximum_directory: Path, path: Path):
+    path.absolute().relative_to(maximum_directory.resolve())
+
+    if not path.exists():
+        raise FileNotFoundError()
+
+    if not path.is_file():
+        raise FileNotFoundError()
+
 @routes.get('/')
 def ip(request: web.Request):
     return aiohttp_jinja2.render_template('index.html',request,{})
@@ -23,13 +33,15 @@ async def gpbid(request: web.Request):
     query = request.rel_url.query
     page_id = query.get('id')
     mode = query.get('mode', 'page')
-    # page, url, meta, text_only, media_only
+
+    if mode not in ['page', 'url', 'meta', 'media']:
+        return web.HTTPNotFound(body = 'Invalid mode')
+
     pages = api.getPagesById(ids = [page_id], convert = False)
     if len(pages) == 0:
         return web.Response(status = 404)
 
     page = pages[0]
-    print(page.linked_pages)
 
     match (mode):
         # Page display
@@ -68,10 +80,17 @@ async def gpbid(request: web.Request):
                 charset = encoding
             )
 
+        case 'meta':
+
+            return aiohttp_jinja2.render_template('page_info.html', request, {
+                'page': page,
+                'taken': datetime.fromtimestamp(page.taken).strftime("%d/%m/%Y, %H:%M:%S"),
+                'linked': page.getLinkedPages()
+            })
+
         case 'url':
             p_url = query.get('url')
             new_url = Asset.getDecodedURL(p_url)
-            print(new_url)
             redirect_url = page.getRelativeURL(new_url)
 
             return aiohttp_jinja2.render_template('url.html', request, {
@@ -105,17 +124,39 @@ async def gpa(request: web.Request):
     file: Path = assets_path.joinpath(path)
 
     try:
-        file.absolute().relative_to(assets_path.resolve())
+        check_path(assets_path, file)
     except (ValueError, RuntimeError) as e:
         logging.exception(e)
-        raise web.HTTPForbidden(reason="Access denied")
+        return web.HTTPForbidden(reason="Access denied")
 
     if not file.is_file():
-        raise web.HTTPNotFound(text="Not found file")
+        return web.HTTPNotFound(text="Not found file")
 
     return web.FileResponse(str(file), headers = {
         'Content-Disposition': f'attachment; filename="{file_name}"',
         'Content-Type': req.getContentType()
+    })
+
+@routes.get('/page/screenshot')
+def gpsbid(request):
+    page_id = request.rel_url.query.get('id')
+    filename = request.rel_url.query.get('file')
+    pages = api.getPagesById(ids = [page_id], convert = False)
+
+    if len(pages) == 0:
+        return web.HTTPNotFound(body = 'Not found page')
+
+    page = pages[0]
+    screenshot = page.getThumbsDir().joinpath(filename)
+
+    try:
+        check_path(page.getThumbsDir(), screenshot)
+    except (ValueError, RuntimeError) as e:
+        logging.exception(e)
+        return web.HTTPForbidden(reason="Access denied")
+
+    return web.FileResponse(str(screenshot), headers = {
+        'Content-Type': 'image/jpeg'
     })
 
 @routes.get('/pages/save')
