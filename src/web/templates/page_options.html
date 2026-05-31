@@ -1,0 +1,45 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+    <form method="get">
+        <input type="hidden" name="id", value="{{id}}">
+        <input type="hidden" name="mode", value="page">
+
+        <div>
+            <span>encoding</span>
+            <select name="encoding">
+                {% for enc in page.encodings %}
+                    <option {% if enc == page.encoding %}checked{% endif %} value="{{enc}}">{{enc}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" name="remove_scripts">
+                remove scripts
+            </label>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" name="remove_styles">
+                remove styles
+            </label>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" name="remove_iframes">
+                remove iframes
+            </label>
+        </div>
+
+        <div>
+            <span>remove selectors</span>
+            <input type="text" name="remove_selectors">
+        </div>
+
+        <input type="submit" value="Show">
+    </form>
+{% endblock %}

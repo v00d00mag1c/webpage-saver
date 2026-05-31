@@ -27,9 +27,12 @@ class Page(BaseModel):
         new.taken_at = model.taken
         #new.url = model.url
         #new.relative_url = model.relative_url
-        new.data = json.dumps(model.model_dump(exclude_none = True, exclude_defaults = True), ensure_ascii = False)
+        new.setData(model.model_dump(exclude_none = True, exclude_defaults = True))
 
         return new
+
+    def setData(self, data: dict):
+        self.data = json.dumps(data, ensure_ascii = False)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

@@ -88,7 +88,7 @@ class WebPage(BaseModel):
         Creates ID.
         '''
         _now = datetime.now()
-        self.identify = f"{_now.strftime('%Y-%m-%d-%H-%M-%S-%S-%f')}"
+        self.identify = f"{_now.strftime('%Y%m%d%H%M%S%f')}"
         self.path_to = self.identify
         self.taken = _now.timestamp()
 
@@ -141,8 +141,18 @@ class WebPage(BaseModel):
                 file.write(html)
 
     def saveData(self):
+        d = self.model_dump(exclude_none = True, exclude_defaults = True)
         with open(str(self.getDataFile()), 'w', encoding = 'utf-8') as file:
-            json.dump(self.model_dump(exclude_none = True, exclude_defaults = True), file, ensure_ascii = False)
+            json.dump(d, file, ensure_ascii = False)
+
+        c = self._selfCachedVersion()
+        if c:
+            c.setData(d)
+            c.save()
+
+    def getAssets(self) -> Generator[GotRequest]:
+        for i, v in self.assets_links.items():
+            yield v
 
     def getAssetByUrl(self, url: str):
         '''
@@ -201,7 +211,6 @@ class WebPage(BaseModel):
         return 'data-__orig'
 
     def has_linked_pages(self):
-        print(self.linked_pages)
         return len(self.linked_pages) > 0
 
     def getLinkedPages(self) -> Generator:
@@ -209,3 +218,8 @@ class WebPage(BaseModel):
 
         for itm in DBPage.select().where(DBPage.path_to.in_(self.linked_pages)).order_by(DBPage.taken_at.desc()):
             yield itm.toModel()
+
+    def _selfCachedVersion(self):
+        from WebpageSaver.Cache import Page as DBPage
+
+        return DBPage.select().where(DBPage.path_to == self.identify).first()

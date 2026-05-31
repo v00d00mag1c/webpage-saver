@@ -4,6 +4,7 @@ from WebpageSaver.Crawler.Webdrivers.WebdriverPage import WebdriverPage
 from WebpageSaver.Crawler.Screenshot import Screenshot
 from WebpageSaver.Crawler.Components.Increment import Increment
 from WebpageSaver.Crawler.Assets.Asset import Asset
+from datetime import datetime
 import asyncio
 import logging
 
@@ -15,8 +16,12 @@ class Crawler:
         _orig_dir = page.getAssetsDir()
 
         async def _request(request):
+            if page.url == request.url:
+                logging.info('not downloading page again')
+
             webdriver_page.got_assets.append(GotRequest(
                 url = request.url,
+                started_at = datetime.now().timestamp(),
                 request = request,
                 done = False
             ))
@@ -49,6 +54,7 @@ class Crawler:
                     #page.assets_links[request.asset.getEncodedURL()] = _i
 
                     headers = response.headers
+                    request.ended_at = datetime.now().timestamp(),
                     request.content_type = headers.get('content-type')
                     _dir = _orig_dir.joinpath(str(_i))
                     buffer = await response.body()
@@ -100,17 +106,6 @@ class Crawler:
 
         for meta in html.get_meta(page):
             page.meta.append(meta)
-
-        '''
-        for link in html.get_links(page):
-            page.links.append(link)
-
-        for link in html.get_urls(page):
-            page.hyperlinks.append(link)
-
-        for link in html.get_media(page):
-            page.media.append(link)
-        '''
 
         results = dict()
         for key in ['get_favicons', 'get_media', 'get_downloadable_links', 'get_scripts']:

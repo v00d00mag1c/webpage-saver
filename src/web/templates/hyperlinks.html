@@ -1,0 +1,11 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+
+{% for i in urls %}
+<div>
+    <a href="{{i.value}}">{{i.label}}</a>
+</div>
+{% endfor %}
+
+{% endblock %}

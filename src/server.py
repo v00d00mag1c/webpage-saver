@@ -29,12 +29,25 @@ def ip(request: web.Request):
     return aiohttp_jinja2.render_template('index.html',request,{})
 
 @routes.get('/page')
-async def gpbid(request: web.Request):
+async def gpbid_wmi(request: web.Request):
     query = request.rel_url.query
-    page_id = query.get('id')
+
+    url = '/page/' + query.get('id') + '?r=1'
+    for key, val in query.items():
+        if key in ['id']:
+            continue
+
+        url += '&' + key + '=' + val
+
+    return web.HTTPFound(location = url)
+
+@routes.get('/page/{id:.*}')
+async def gpbid(request: web.Request):
+    query = dict(request.rel_url.query)
+    page_id = request.match_info.get('id')
     mode = query.get('mode', 'page')
 
-    if mode not in ['page', 'url', 'meta', 'media']:
+    if mode not in ['page', 'page_options', 'text', 'all_assets', 'url', 'meta', 'metatags', 'media', 'hyperlinks']:
         return web.HTTPNotFound(body = 'Invalid mode')
 
     pages = api.getPagesById(ids = [page_id], convert = False)
@@ -42,36 +55,44 @@ async def gpbid(request: web.Request):
         return web.Response(status = 404)
 
     page = pages[0]
+    # Encoding
+    encoding = page.encoding
+    if query.get('encoding') != None:
+        encoding = query.get('encoding')
 
     match (mode):
         # Page display
-        case 'page':
-            remove_inline_styles = False
-            disable_js = False
-            disable_css = False
-            disable_iframes = False
-            remove_selectors = None
+        case 'page' | 'text':
 
-            # Encoding
-            encoding = page.encoding
-            if query.get('encoding') != None:
-                encoding = query.get('encoding')
+            if mode == 'text':
+                query['remove_scripts'] = 'on'
+                query['remove_inline_css'] = 'on'
+                query['remove_styles'] = 'on'
+                query['remove_iframes'] = 'on'
+                query['remove_selectors'] = 'nav, header, input, button'
 
             text = page.getRootFile().read_text(encoding = encoding)
             html = PageHTML.from_html(text)
 
-            if disable_js:
+            if query.get('remove_scripts') == 'on':
                 html.clear_js()
-            if remove_inline_styles:
+            if query.get('remove_inline_css') == 'on':
                 html.remove_inline_css()
-            if disable_css:
+                html.remove_html_stylization()
+            if query.get('remove_styles') == 'on':
                 html.remove_css()
-            if disable_iframes:
+            if query.get('remove_iframes') == 'on':
                 html.remove_iframes()
-            if remove_selectors:
-                html.remove_selectors(remove_selectors)
 
-            html.make_correct_links(page)
+            try:
+                if query.get('remove_selectors') != None:
+                    html.remove_selectors(query.get('remove_selectors'))
+            except:
+                pass
+
+            if query.get('original') != 'on':
+                html.make_correct_links(page)
+
             #head_html = html.move_head()
 
             return web.Response(
@@ -79,6 +100,13 @@ async def gpbid(request: web.Request):
                 content_type='text/html',
                 charset = encoding
             )
+
+        case 'page_options':
+
+            return aiohttp_jinja2.render_template('page_options.html', request, {
+                'page': page,
+                'id': page_id
+            })
 
         case 'meta':
 
@@ -96,6 +124,51 @@ async def gpbid(request: web.Request):
             return aiohttp_jinja2.render_template('url.html', request, {
                 'url': redirect_url,
                 'id': page.identify
+            })
+
+        case 'all_assets':
+
+            return aiohttp_jinja2.render_template('all_assets.html', request, {
+                'assets': page.getAssets()
+            })
+
+        case 'metatags':
+
+            text = page.getRootFile().read_text(encoding = encoding)
+            html = PageHTML.from_html(text)
+
+            return aiohttp_jinja2.render_template('metatags.html', request, {
+                'metatags': page.meta,
+                'links': html.get_links(page),
+                'scripts': html.get_scripts(page),
+            })
+
+        case 'media':
+
+            mmode = query.get('mmode')
+            text = page.getRootFile().read_text(encoding = encoding)
+            html = PageHTML.from_html(text)
+            if query.get('original') != 'on':
+                html.make_correct_links(page)
+
+            medias = html.get_media(page, mmode)
+
+            return aiohttp_jinja2.render_template('media.html', request, {
+                'media': medias,
+                'mmode': mmode
+            })
+
+        case 'hyperlinks':
+
+            rel = query.get('rel', 'off')
+
+            text = page.getRootFile().read_text(encoding = encoding)
+            html = PageHTML.from_html(text)
+            if rel == 'on':
+                html.make_correct_links(page)
+
+            return aiohttp_jinja2.render_template('hyperlinks.html', request, {
+                'urls': html.get_urls(page, keep_original_urls = rel == 'off')
             })
 
 @routes.get('/page/asset')
@@ -171,11 +244,14 @@ async def gw(request: web.Request):
 async def sp(request: web.Request):
     inputs = await request.post()
     url = inputs.get('url')
+    ps = None
     link_to = inputs.get('link_to')
-    ps = api.getPagesById(ids = [link_to], convert = False)
 
-    if len(ps) == 0:
-        return web.HTTPNotFound(body = 'Not found page to link')
+    if link_to != None:
+        ps = api.getPagesById(ids = [link_to], convert = False)
+
+        if len(ps) == 0:
+            return web.HTTPNotFound(body = 'Not found page to link')
 
     payload = await api.savePage(url = url, link_pages = ps)
 

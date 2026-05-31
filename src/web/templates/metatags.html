@@ -1,0 +1,64 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+
+<h1>metatags</h1>
+
+<table>
+    <thead>
+        <tr>
+            <td>name</td>
+            <td>content</td>
+            <td>property</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in metatags %}
+        <tr>
+            <td>{{i.name}}</td>
+            <td>{{i.content}}</td>
+            <td>{{i.property}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h1>links</h1>
+
+<table>
+    <thead>
+        <tr>
+            <td>name</td>
+            <td>media</td>
+            <td>type</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in links %}
+        <tr>
+            <td>{{i.rel}}</td>
+            <td>{{i.media}}</td>
+            <td>{{i.type}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h1>scripts</h1>
+
+<table>
+    <thead>
+        <tr>
+            <td>url</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in scripts %}
+        <tr>
+            <td>{{i.url}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

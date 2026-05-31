@@ -1,7 +1,7 @@
 **viewer**
 
-- [ ] Cache pages into sqlite
-- [ ] Page viewer in web
+- [x] Cache pages into sqlite
+- [x] Page viewer in web
 - [ ] Pages list on web (and search)
 
 **downloader**
@@ -12,6 +12,12 @@
 - [ ] load page from html and browser extension
 - [x] list of found encodings
 - [ ] screenshot canvases
+- [ ] 302 response
+- [ ] iframes
+
+**saver**
+
+- [ ] websocket connection when saving
 
 **assets**
 

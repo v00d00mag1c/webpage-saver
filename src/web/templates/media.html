@@ -1,0 +1,41 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+
+<form>
+    <input type="hidden" name="mode" value="media">
+    <select name="mmode">
+        <option value="all">all</option>
+        <option value="img">img</option>
+        <option value="video">video</option>
+    </select>
+    <input type="submit" value=".">
+</form>
+<hr>
+
+<table>
+    <thead>
+        <tr>
+            <td>url</td>
+            <td>tagName</td>
+            <td>alt</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in media %}
+            <tr>
+                <td>
+                    {% if mmode == 'img' %}
+                        <img src="{{i.url}}">
+                    {% else%}
+                        {{i.url}}
+                    {% endif %}
+                </td>
+                <td>{{i.tagName}}</td>
+                <td>{{i.alt}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

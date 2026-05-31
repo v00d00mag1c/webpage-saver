@@ -28,11 +28,18 @@ class PageHTML:
         if take_default:
             yield Favicon(url = orig_page.base_url + '/favicon.ico')
 
-    def get_media(self, orig_page: WebPage) -> Generator:
-        for tag in self.bs.select("img[src], video[src], audio[src]"):
+    def get_media(self, orig_page: WebPage, selector: str = None) -> Generator:
+        if selector == None:
+            selector = "[src]"
+
+        for tag in self.bs.select(selector):
             item = Media()
             item.tagName = tag.name
-            item.set_url(orig_page.getRelativeURL(tag.get('src')))
+
+            src = tag.get('src')
+            #src = tag.get('data-__orig')
+            #item.set_url(orig_page.getRelativeURL(src))
+            item.set_url(src)
             item.set_node(tag)
             if tag.get('alt'):
                 item.alt = tag.get('alt')
@@ -75,7 +82,7 @@ class PageHTML:
 
             yield item
 
-    def get_urls(self, orig_page: WebPage):
+    def get_urls(self, orig_page: WebPage, keep_original_urls: bool = True):
         for tag in self.bs.select("a"):
             label = tag.text
 
@@ -102,7 +109,10 @@ class PageHTML:
                             logging.info('url {0}: probaly protocol'.format(attr))
                             url.set_protocol(attr)
                         else:
-                            url.set_url(orig_page.getRelativeURL(attr))
+                            if keep_original_urls:
+                                url.set_url(orig_page.getRelativeURL(attr))
+                            else:
+                                url.set_url(attr)
                     elif key == 'download':
                         url.is_download = True
                 except Exception as e:
@@ -178,6 +188,11 @@ class PageHTML:
         for tag in self.bs.find_all(attrs={"style": True}):
             del tag['style']
 
+    def remove_html_stylization(self):
+        for i in ['background', 'bgcolor', 'color']:
+            for tag in self.bs.find_all(attrs={i: True}):
+                del tag[i]
+
     def remove_css(self):
         for tag in self.bs.select('style'):
             tag.decompose()
@@ -202,18 +217,18 @@ class PageHTML:
         for item in self.bs.select('[' + page.getOrigAttr() + ']'):
             #_url = base64.urlsafe_b64encode(('assets/' + _file_url).encode()).decode()
             _url = item[page.getOrigAttr()]
-            _id = page.getAssetByUrl(_url)
-            if _id == None:
-                logging.error('page {0}: element \"{1}\" is missing'.format('x', _url))
-
-                continue
-
             _key = item[page.getKeyAttr()]
-            item[_key] = '/page/asset?id={0}&path={1}'.format(page.identify, _id[0])
-
+            _id = page.getAssetByUrl(_url)
             # removing internal data attributes
             item.attrs = {key:value for key,value in item.attrs.items()
                     if key not in [page.getOrigAttr(), page.getKeyAttr()]}
+
+            if _id == None:
+                logging.error('page {0}: element \"{1}\" is missing'.format(page.identify, _url))
+
+                continue
+
+            item[_key] = '/page/asset?id={0}&path={1}'.format(page.identify, _id[0])
 
         for item in self.bs.select('meta[http-equiv]'):
             item.decompose()
@@ -225,7 +240,7 @@ class PageHTML:
                 if _href[0] == '#':
                     continue
 
-                item['href'] = '/page?mode=url&id={0}&url={1}'.format(page.identify, Asset.encodeURL(_href))
+                item['href'] = '/page/{0}?mode=url&url={1}'.format(page.identify, Asset.encodeURL(_href))
 
     def prettify(self, encoding: str = 'utf-8') -> str:
         return self.bs.prettify(encoding = encoding)

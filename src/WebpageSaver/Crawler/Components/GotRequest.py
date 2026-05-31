@@ -9,6 +9,11 @@ class GotRequest(BaseModel):
     asset: Asset = Field(default = None)
     request: Any = Field(default = None, exclude = True)
     response: Any = Field(default = None, exclude = True)
+
+    started_at: int = Field(default = None)
+    ended_at: int = Field(default = None)
+    interrupted_at: int = Field(default = None)
+
     done: bool = Field(default = False)
 
     def getContentType(self) -> str:

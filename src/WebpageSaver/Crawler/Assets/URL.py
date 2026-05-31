@@ -9,7 +9,7 @@ class URL(Asset):
     is_protocol: bool = Field(default = False)
 
     def set_url(self, href: str, base_url: str = ''):
-        if not href.startswith('http'):
+        if not href.startswith('http') and base_url != '':
             href = base_url + '/' + href
 
         self.value = href

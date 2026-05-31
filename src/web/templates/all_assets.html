@@ -1,0 +1,27 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+    <table>
+        <thead>
+            <tr>
+                <td>url</td>
+                <td>content-type</td>
+                <td>filename</td>
+                <td>downloaded in</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in assets %}
+            <tr>
+                <td>{{i.url}}</td>
+                <td>{{i.content_type}}</td>
+                <td>{{i.asset.getName()}}</td>
+
+                {% if i.started_at and i.ended_at %}
+                    <td>{{i.ended_at - i.started_at}}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

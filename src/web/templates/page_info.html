@@ -7,12 +7,12 @@
 
     <div>
         <a href="/page/screenshot?id={{page.identify}}&file=fullscreen.jpeg">
-            <img src="/page/screenshot?id={{page.identify}}&file=viewport.jpeg" alt="">
+            <img style="width: 100%;" src="/page/screenshot?id={{page.identify}}&file=viewport.jpeg" alt="">
         </a>
     </div>
 
     <div>
-        <p>taken: {{taken}}</p>
+        <p>{{taken}}</p>
         <p>url: {{page.url}}</p>
         <p>base: {{page.base_url}}</p>
     </div>
@@ -21,19 +21,22 @@
 
     <div>
         <a href="/page?id={{page.identify}}">open</a>
-        <a href="/page?id={{page.identify}}">open (without js)</a>
+        <hr>
+        <a href="/page?id={{page.identify}}&mode=page_options">open with options</a>
     </div>
 
     <hr>
 
     <div>
-        <a href="/page?id={{page.identify}}&mode=text">text only</a>
+        <a href="/page/{{page.identify}}?mode=text">text only</a>
     </div>
     <div>
-        <a href="/page?id={{page.identify}}&mode=all_assets">all assets</a>
-        <a href="/page?id={{page.identify}}&mode=media">media</a>
-        <a href="/page?id={{page.identify}}&mode=metatags">meta</a>
-        <a href="/page?id={{page.identify}}&mode=hyperlinks">hyperlinks from this page</a>
+        <a href="/page/{{page.identify}}?mode=media">media</a>
+        <a href="/page/{{page.identify}}?mode=metatags">metatags, scripts, links</a>
+        <hr>
+        <a href="/page/{{page.identify}}?mode=hyperlinks">hyperlinks from this page</a>
+        <hr>
+        <a href="/page/{{page.identify}}?mode=all_assets">requests when downloading</a>
     </div>
 
     <hr>
@@ -47,7 +50,7 @@
                 {% for itm in linked %}
                 <tr>
                     <td>{{itm.url}}</td>
-                    <td><a href="/page?id={{itm.identify}}">{{itm.title}}</a></td>
+                    <td><a href="/page/{{page.identify}}">{{itm.title}}</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
