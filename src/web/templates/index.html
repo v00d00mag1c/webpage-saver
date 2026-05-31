@@ -1,5 +1,11 @@
 {% extends '@layout.html' %}
 
 {% block body %}
-<a href="/pages/save">save</a>
+    <div>
+        <form action="/page/search">
+            <input type="text" name="q">
+
+            <input type="submit" value="search">
+        </form>
+    </div>
 {% endblock %}

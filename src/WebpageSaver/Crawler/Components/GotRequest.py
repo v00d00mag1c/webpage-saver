@@ -10,9 +10,9 @@ class GotRequest(BaseModel):
     request: Any = Field(default = None, exclude = True)
     response: Any = Field(default = None, exclude = True)
 
-    started_at: int = Field(default = None)
-    ended_at: int = Field(default = None)
-    interrupted_at: int = Field(default = None)
+    started_at: float = Field(default = None)
+    ended_at: float = Field(default = None)
+    interrupted_at: float = Field(default = None)
 
     done: bool = Field(default = False)
 

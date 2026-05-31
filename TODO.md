@@ -1,8 +1,7 @@
 **viewer**
 
-- [x] Cache pages into sqlite
 - [x] Page viewer in web
-- [ ] Pages list on web (and search)
+- [x] Pages list on web (and search)
 
 **downloader**
 
@@ -27,3 +26,7 @@
 
 - [ ] webdriver downloader
 - [ ] webdriver selector
+
+**cache**
+
+- [ ] save url without http / https differences

@@ -112,7 +112,7 @@ async def gpbid(request: web.Request):
 
             return aiohttp_jinja2.render_template('page_info.html', request, {
                 'page': page,
-                'taken': datetime.fromtimestamp(page.taken).strftime("%d/%m/%Y, %H:%M:%S"),
+                'taken': page.getReadableTaken(),
                 'linked': page.getLinkedPages()
             })
 
@@ -235,6 +235,18 @@ def gpsbid(request):
 @routes.get('/pages/save')
 def spw(request: web.Request):
     return aiohttp_jinja2.render_template('save.html',request,{})
+
+@routes.get('/page/search')
+def sfp(request: web.Request):
+    query = request.rel_url.query
+    q = query.get('q')
+
+    res = api.findPagesByURL(url = q, conv = False)
+
+    return aiohttp_jinja2.render_template('search.html',request,{
+        'q': q,
+        'items': res.get('items')
+    })
 
 @routes.get('/api/webdrivers')
 async def gw(request: web.Request):

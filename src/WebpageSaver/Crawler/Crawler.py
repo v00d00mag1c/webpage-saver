@@ -54,12 +54,13 @@ class Crawler:
                     #page.assets_links[request.asset.getEncodedURL()] = _i
 
                     headers = response.headers
-                    request.ended_at = datetime.now().timestamp(),
                     request.content_type = headers.get('content-type')
                     _dir = _orig_dir.joinpath(str(_i))
                     buffer = await response.body()
                     with open(str(_dir), 'wb+') as _file:
                         _file.write(buffer)
+
+                    request.ended_at = datetime.now().timestamp()
 
                     logging.info('assets: downloaded {0}'.format(_url))
                 except Exception as e:

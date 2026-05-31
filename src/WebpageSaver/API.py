@@ -3,6 +3,7 @@ from WebpageSaver.Crawler.WebPage import WebPage
 from WebpageSaver.Crawler.Crawler import Crawler
 from WebpageSaver import config
 from WebpageSaver.Cache import Cache, Page
+from yarl import URL
 
 cache = Cache()
 
@@ -79,3 +80,78 @@ class API:
     def deletePagesById(self, id: str) -> None:
         for item in Page.select().where(Page.path_to == id):
             item.delete_instance()
+
+    def findPagesByURL(self, url: str, 
+                       conv: bool = True,
+                       find_by_start: bool = False
+                       ):
+        # If URL is empty
+        if url == '':
+            res = list()
+            for p in Page.select().order_by(Page.taken_at.desc()):
+                m = p.toModel()
+                if conv:
+                    res.append(m.dump())
+                else:
+                    res.append(m)
+
+            return {
+                'type': 'all_search',
+                'items': res,
+            }
+
+        if url.startswith('http') == False:
+            url = 'https://' + url
+
+        u = URL(url)
+        assert u.host != None, 'invalid url'
+
+        # Finding by start of the URL
+        if find_by_start:
+            pages = Page.select().where(Page.url.startswith(url)).group_by(Page.url).order_by(Page.taken_at.desc())
+            res = list()
+
+            for p in pages:
+                m = p.toModel()
+                if conv:
+                    res.append(m.dump())
+                else:
+                    res.append(m)
+
+            return {
+                'type': 'urls',
+                'items': res
+            }
+
+        # Thinking that it is a domain
+        if u.path == '/':
+            pages = Page.select().where(Page.domain == u.host).order_by(Page.taken_at.desc())
+            res = list()
+
+            for p in pages:
+                m = p.toModel()
+                if conv:
+                    res.append(m.dump())
+                else:
+                    res.append(m)
+
+            return {
+                'type': 'domain_search',
+                'items': res,
+                'divided_by_months': [] # TODO
+            }
+        else:
+            pages = Page.select().where(Page.url == u.human_repr()).order_by(Page.taken_at.desc())
+            res = list()
+
+            for p in pages:
+                m = p.toModel()
+                if conv:
+                    res.append(m.dump())
+                else:
+                    res.append(m)
+
+            return {
+                'type': 'url_equal',
+                'items': res
+            }

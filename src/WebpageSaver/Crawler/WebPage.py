@@ -150,6 +150,12 @@ class WebPage(BaseModel):
             c.setData(d)
             c.save()
 
+    def getReadableTaken(self):
+        if self.taken == None:
+            return None
+
+        return datetime.fromtimestamp(self.taken).strftime("%d/%m/%Y, %H:%M:%S")
+
     def getAssets(self) -> Generator[GotRequest]:
         for i, v in self.assets_links.items():
             yield v

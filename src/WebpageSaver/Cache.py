@@ -1,7 +1,9 @@
 from pathlib import Path
+from pydantic import ValidationError
 from peewee import *
 from WebpageSaver import config
 from WebpageSaver.Crawler.WebPage import WebPage
+from yarl import URL
 import logging
 import json
 
@@ -12,21 +14,28 @@ class BaseModel(Model):
         database = db
 
 class Page(BaseModel):
-    title = TextField()
+    title = TextField(default = 'Untitled')
     path_to = TextField(unique=True)
     taken_at = FloatField()
-    #url = TextField()
-    #relative_url = TextField()
+    url = TextField()
+    domain = TextField()
     data = TextField(null = False)
 
     @classmethod
     def fromModel(cls, model: WebPage, path_to: str):
+        u = URL(model.url)
+
         new = Page()
         new.title = model.title
         new.path_to = path_to
         new.taken_at = model.taken
-        #new.url = model.url
-        #new.relative_url = model.relative_url
+        new.url = u.human_repr()
+
+        if u.host.startswith('www.'):
+            new.domain = u.host[4:]
+        else:
+            new.domain = u.host
+
         new.setData(model.model_dump(exclude_none = True, exclude_defaults = True))
 
         return new
@@ -39,8 +48,17 @@ class Page(BaseModel):
 
         logging.info('indexated page {0}'.format(self.path_to))
 
-    def toModel(self):
-        return WebPage.fromPath(self.path_to)
+    def toModel(self, fast: bool = True):
+        if fast:
+            try:
+                m = WebPage.model_validate(json.loads(self.data))
+                m.root_directory = config.webpages_dir
+                return m
+            except ValidationError as e:
+                logging.exception(e)
+                return WebPage(url = self.url, root_directory = str(config.webpages_dir))
+        else:
+            return WebPage.fromPath(self.path_to)
 
 class Cache:
     '''

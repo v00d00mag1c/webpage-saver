@@ -1,0 +1,30 @@
+{% extends '@layout.html' %}
+
+{% block body %}
+
+<div>
+    <form action="/page/search">
+        <input type="text" name="q" id="url" value="{{q}}">
+
+        <input type="submit" value="search">
+    </form>
+
+    <input type="button" onclick="save_submit(document.querySelector('#url').value)" value="save">
+
+</div>
+
+<div>
+    <table>
+        <tbody>
+            {% for i in items %}
+            <tr>
+                <td><a href="/page/{{i.identify}}">{{i.url}}</a></td>
+                <td>{{i.getReadableTaken()}}</td>
+                <td><a href="/page/{{i.identify}}?mode=meta">...</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
